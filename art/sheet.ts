@@ -8,8 +8,14 @@ import { chromium } from "playwright";
 const root = resolve(process.argv[2] ?? ".");
 const out = `${root}/art/out`;
 mkdirSync(out, { recursive: true });
-const cell = (dir: string, f: string, bg: string, color: string, size: number) =>
-  `<div class="c" style="background:${bg};color:${color}"><img src="file://${root}/mods/empires/${dir}/${f}" width="${size}" height="${size}" style="${dir === "icons" ? `-webkit-mask:url(file://${root}/mods/empires/${dir}/${f}) center/contain no-repeat;background:${color};` : ""}"><span>${f.replace(".svg", "")}</span></div>`;
+import { readFileSync } from "node:fs";
+// Glyphs are inlined so `currentColor` takes the cell's colour, as svg() tints them in Herdr.
+const cell = (dir: string, f: string, bg: string, color: string, size: number) => {
+  const inner = dir === "icons"
+    ? readFileSync(`${root}/mods/empires/${dir}/${f}`, "utf8").replace(/width="\d+" height="\d+"/, `width="${size}" height="${size}"`)
+    : `<img src="file://${root}/mods/empires/${dir}/${f}" width="${size}" height="${size}">`;
+  return `<div class="c" style="background:${bg};color:${color}">${inner}<span>${f.replace(".svg", "")}</span></div>`;
+};
 let html = `<html><body style="margin:0;background:#3d382f;font:11px sans-serif;color:#f1e6c8"><div style="display:flex;flex-wrap:wrap;width:900px">`;
 for (const f of readdirSync(`${root}/mods/empires/icons`).filter((x) => x.endsWith(".svg")).sort()) html += cell("icons", f, "#6e665a", "#f1e6c8", 48);
 for (const f of readdirSync(`${root}/mods/empires/img`).filter((x) => x.endsWith(".svg")).sort()) html += cell("img", f, "#2e1f12", "#f1e6c8", 64);
