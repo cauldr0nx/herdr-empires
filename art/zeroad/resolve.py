@@ -34,19 +34,39 @@ ART = os.path.join(ZEROAD, ART_REL)
 # --------------------------------------------------------------------------
 # What the pack renders. "kind" picks the camera/scale preset in render.py.
 # anims: pack anim name -> (selections, 0 A.D. animation name, frames, fps)
+# Frame counts are shared by every unit look so looks are drop-in for each
+# other; they are kept modest (52 frames per direction) to fit six looks x 8
+# colours into the pack budget.
 VILLAGER_ANIMS = {
     "idle":        (["Idle"], "Idle", 8, 6),
     "walk":        (["Walk"], "Walk", 12, 12),
-    "gather_wood": (["gather_tree"], "gather_tree", 12, 10),
-    "gather_gold": (["gather_ore"], "gather_ore", 12, 10),
-    "carry":       (["carry_wood"], "Walk", 12, 12),
-    "build":       (["Build"], "Build", 12, 10),
+    "gather_wood": (["gather_tree"], "gather_tree", 8, 7),
+    "gather_gold": (["gather_ore"], "gather_ore", 8, 7),
+    "carry":       (["carry_wood"], "Walk", 8, 9),
+    "build":       (["Build"], "Build", 8, 7),
 }
+# Turns a citizen soldier into an unarmed worker: swap the soldier's base
+# stance for 0 A.D.'s male labourer stance and drop weapons/shields/helmets
+# (gather/carry/build variants still add their own tools).
+WORKER = {"replace_base": "biped/base_slave_male.xml",
+          "drop_props": ["props/units/weapons/", "props/units/shields/", "props/units/helmets/"]}
 
 ENTITIES = {
     # unit
     "villager": {"actor": "units/celts/female_citizen.xml", "kind": "unit",
                  "pick": 0, "anims": VILLAGER_ANIMS},
+    "villager_b": {"actor": "units/britons/infantry_spearman_b.xml", "kind": "unit",
+                   "pick": 1, "anims": VILLAGER_ANIMS, **WORKER},
+    # Capes are rigid props on the root, so they stick out when the unit bends: dropped.
+    "villager_c": {"actor": "units/gauls/infantry_swordsman_b.xml", "kind": "unit",
+                   "pick": 2, "anims": VILLAGER_ANIMS, **WORKER,
+                   "drop_props": WORKER["drop_props"] + ["props/units/capes/"]},
+    "villager_d": {"actor": "units/iberians/infantry_spearman_b.xml", "kind": "unit",
+                   "pick": 0, "anims": VILLAGER_ANIMS, **WORKER},
+    "villager_e": {"actor": "units/romans/infantry_swordsman_servus.xml", "kind": "unit",
+                   "pick": 5, "anims": VILLAGER_ANIMS, **WORKER},
+    "villager_f": {"actor": "units/celts/female_citizen.xml", "kind": "unit",
+                   "pick": 4, "anims": VILLAGER_ANIMS},
     # buildings (Briton set; stand-ins for the AoE-style roles noted)
     # "garrisoned" hangs the player-colour banner on the town center.
     "town_center": {"actor": "structures/britons/civic_centre.xml", "kind": "building",
@@ -57,6 +77,23 @@ ENTITIES = {
     "barracks":    {"actor": "structures/britons/barracks.xml", "kind": "building"},     # university stand-in
     "temple":      {"actor": "structures/britons/temple.xml", "kind": "building"},       # monastery
     "farmstead":   {"actor": "structures/britons/farmstead.xml", "kind": "building"},    # mill
+    # progression buildings
+    "market":        {"actor": "structures/britons/market.xml", "kind": "building"},
+    "blacksmith":    {"actor": "structures/britons/blacksmith.xml", "kind": "building"},
+    "defense_tower": {"actor": "structures/britons/wooden_tower.xml", "kind": "building"},
+    "sentry_tower":  {"actor": "structures/britons/scout_tower.xml", "kind": "building"},
+    # plot_field.xml's meshes are 2009 3ds Max COLLADA that Blender imports as
+    # empty; the newer farmland decal renders cleanly.
+    "field":         {"actor": "structures/plot_field_new.xml", "kind": "building"},
+    "corral":        {"actor": "structures/britons/plot_corral.xml", "kind": "building"},
+    "fortress":      {"actor": "structures/britons/fortress.xml", "kind": "building"},
+    "fortress_gaul": {"actor": "structures/gauls/fortress.xml", "kind": "building"},
+    "wonder":        {"actor": "structures/britons/wonder.xml", "kind": "building"},
+    "palisade":        {"actor": "props/special/palisade_rocks_long.xml", "kind": "building"},
+    "palisade_corner": {"actor": "props/special/palisade_rocks_curve.xml", "kind": "building"},
+    "gate":            {"actor": "props/special/palisade_rocks_gate.xml", "kind": "building"},
+    "house_gaul_0":  {"actor": "structures/gauls/house.xml", "kind": "building", "pick": 0},
+    "house_gaul_1":  {"actor": "structures/gauls/house.xml", "kind": "building", "pick": 1},
     # gaia
     "tree_0": {"actor": "flora/trees/oak_new.xml", "kind": "gaia", "pick": 0},
     "tree_1": {"actor": "flora/trees/euro_birch_tree.xml", "kind": "gaia", "pick": 0},
@@ -97,13 +134,20 @@ def read_xml(rel):
     return ET.fromstring(data.decode("utf-8-sig").encode("utf-8"))
 
 
+# Per-entity overrides, set by build() while an entity is resolved.
+OPTS = {}
+
+
 def variant_data(v, files):
     """Merge a <variant> element with its file= base. Returns a dict."""
     d = {"name": v.get("name", ""), "frequency": int(v.get("frequency", "0") or 0),
          "mesh": None, "textures": {}, "props": [], "animations": {}, "color": None,
          "decal": None}
     if v.get("file"):
-        rel = "variants/" + v.get("file")
+        f = v.get("file")
+        if OPTS.get("replace_base") and f.startswith("biped/base_"):
+            f = OPTS["replace_base"]
+        rel = "variants/" + f
         files.add(rel)
         base = variant_data(read_xml(rel), files)
         for k in ("mesh", "color", "decal"):
@@ -187,6 +231,8 @@ def resolve_actor(rel, selections, pick, files, parent=None, attach="root", part
         for ap, actor in merged["props"]:
             if not actor or actor.startswith(SKIP_PROP_PREFIXES) or ap in SKIP_ATTACH:
                 continue
+            if actor.startswith(tuple(OPTS.get("drop_props", ()))):
+                continue
             resolve_actor(actor, selections, pick, files, pid, ap, parts, depth + 1)
     return parts, merged["animations"]
 
@@ -196,6 +242,8 @@ def build():
     scenes = {}
     for name, e in ENTITIES.items():
         pick = e.get("pick", 0)
+        OPTS.clear()
+        OPTS.update(e)
         if "anims" in e:
             scenes[name] = {"kind": e["kind"], "actor": e["actor"], "anims": {}}
             for anim, (sel, zname, frames, fps) in e["anims"].items():
@@ -215,6 +263,7 @@ def build():
     for t in UI.values():
         files.add("textures/ui/session/" + t)
     files.add("skeletons/biped.xml")
+    OPTS.clear()
     return scenes, files
 
 

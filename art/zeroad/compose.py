@@ -41,12 +41,33 @@ TILE = (96, 48)
 # "role" notes which 0 A.D. building stands in for an AoE-style one.
 BUILDINGS = {
     "town_center": (["town_center"], "Briton civic centre"),
-    "house":       (["house", "house_b"], "Briton house (two variants)"),
+    "house":       (["house", "house_b", "house_gaul_0", "house_gaul_1"], "Briton house (2 variants) and Gaul house (2 variants)"),
     "lumber_camp": (["storehouse"], "Briton storehouse"),
     "mining_camp": (["storehouse"], "Briton storehouse"),
     "mill":        (["farmstead"], "Celtic farmstead"),
     "monastery":   (["temple"], "Celtic temple"),
     "university":  (["barracks"], "Briton barracks"),
+    # progression
+    "market":        (["market"], "Briton market"),
+    "blacksmith":    (["blacksmith"], "Briton blacksmith"),
+    "defense_tower": (["defense_tower"], "Briton wooden (defense) tower"),
+    "sentry_tower":  (["sentry_tower"], "Briton scout tower"),
+    "field":         (["field"], "0 A.D. farmland plot (flat ground decal)"),
+    "corral":        (["corral"], "Briton corral"),
+    "fortress":      (["fortress_gaul", "fortress"], "Gaul fortress (variant 0, walled, castle-like) and Briton fortress / broch (variant 1)"),
+    "wonder":        (["wonder"], "Briton wonder (ring fort), rendered at a smaller scale"),
+    "palisade":      (["palisade"], "0 A.D. rock-footed palisade, one straight segment"),
+    "palisade_corner": (["palisade_corner"], "0 A.D. rock-footed palisade, curved corner"),
+    "gate":          (["gate"], "0 A.D. palisade gate"),
+}
+UNIT_LOOKS = ["villager", "villager_b", "villager_c", "villager_d", "villager_e", "villager_f"]
+LOOK_SOURCES = {
+    "villager": "Celtic female citizen",
+    "villager_b": "Briton citizen spearman, as unarmed worker",
+    "villager_c": "Gaul citizen swordsman, as unarmed worker",
+    "villager_d": "Iberian citizen spearman, as unarmed worker",
+    "villager_e": "Roman servus (tunic), as unarmed worker",
+    "villager_f": "Celtic female citizen, second dress/hair variant",
 }
 GAIA = {
     "tree": ["tree_0", "tree_1", "tree_2"],
@@ -54,8 +75,8 @@ GAIA = {
     "stone_mine": ["stone_mine"],
     "berry_bush": ["berry_bush"],
 }
-FILE_NAMES = {"town_center": "town-center", "storehouse": "storehouse", "farmstead": "farmstead",
-              "temple": "temple", "barracks": "barracks", "house": "house", "house_b": "house-b"}
+def file_name(pack_entity):
+    return pack_entity.replace("_", "-")
 
 manifest = {}
 
@@ -88,9 +109,14 @@ def hex_lin(h):
 
 
 def load_frame(d, i):
-    rgba = np.asarray(Image.open(os.path.join(d, f"rgba_{i:02d}.png")).convert("RGBA"), dtype=np.float64) / 255.0
+    rgba = np.array(Image.open(os.path.join(d, f"rgba_{i:02d}.png")).convert("RGBA"), dtype=np.float64) / 255.0
     mp = os.path.join(d, f"mask_{i:02d}.png")
     mask = np.asarray(Image.open(mp).convert("L"), dtype=np.float64) / 255.0 if os.path.exists(mp) else np.zeros(rgba.shape[:2])
+    # The shadow catcher also records faint sky occlusion over the whole frame
+    # (alpha ~6/255, pure black). Lift that floor on shadow-only pixels.
+    shadow = rgba[..., :3].max(axis=-1) < 10 / 255
+    floor = 14 / 255
+    rgba[..., 3] = np.where(shadow, np.clip((rgba[..., 3] - floor) / (1 - floor), 0, 1), rgba[..., 3])
     return rgba, mask
 
 
@@ -201,6 +227,8 @@ def compose_static(names, frames_dir, out, rel_base, colored):
     down = max(b[3] - fy for *_, b, (fx, fy) in imgs)
     W, H = int(np.ceil(float(left + right))) + 2, int(np.ceil(float(up + down))) + 2
     ax, ay = int(np.ceil(float(left))) + 1, int(np.ceil(float(up))) + 1
+    if colored is None:  # colour only if the model has any player-colour area
+        colored = any(i[3].max() > 0.1 for i in imgs)
     files = []
     colors = list(PLAYER_COLORS) if colored else [None]
     for k, (nm, meta, rgba, mask, b, (fx, fy)) in enumerate(imgs):
@@ -217,7 +245,7 @@ def compose_static(names, frames_dir, out, rel_base, colored):
             orel = rel.format(color=color) if colored else rel
             save_png(to_img(canvas), os.path.join(out, orel), quantize=True)
             note(orel, sources_for(nm), f"0 A.D. actor {meta['actor']}" + (f"; player colour {color}" if color else ""))
-    return {"anchor": [ax, ay], "size": [W, H], "files": files,
+    return {"anchor": [ax, ay], "size": [W, H], "files": files, "colored": colored,
             "scale_px_per_m": imgs[0][1]["scale_px_per_m"]}
 
 
@@ -474,12 +502,17 @@ def main():
     os.makedirs(out, exist_ok=True)
 
     entities = {}
-    entities["villager"] = compose_unit("villager", a.frames, out)
+    for look in UNIT_LOOKS:
+        entities[look] = compose_unit(look, a.frames, out, pack_name=file_name(look))
+        entities[look]["source"] = LOOK_SOURCES[look] + " (" + entities[look]["source"] + ")"
+    done = {}
     for pname, (names, role) in BUILDINGS.items():
-        base = "buildings/" + FILE_NAMES[names[0]]
-        r = compose_static(names, a.frames, out, base, colored=True)
+        base = "buildings/" + file_name(names[0] if len(names) == 1 else pname)
+        key = tuple(names)
+        r = done.get(key) or compose_static(names, a.frames, out, base, colored=None)
+        done[key] = r
         e = {"anchor": r["anchor"], "size": r["size"], "source": role,
-             "scale_px_per_m": r["scale_px_per_m"]}
+             "playerColor": r["colored"], "scale_px_per_m": r["scale_px_per_m"]}
         if len(r["files"]) == 1:
             e["image"] = r["files"][0]
         else:
@@ -504,6 +537,7 @@ def main():
 
     pack = {
         "name": "zeroad",
+        "unitLooks": UNIT_LOOKS,
         "title": "0 A.D. (CC BY-SA 3.0)",
         "license": "CC-BY-SA-3.0",
         "attribution": "Art derived from 0 A.D. by Wildfire Games (https://www.wildfiregames.com/), "

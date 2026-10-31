@@ -29,13 +29,28 @@ committing the pack.
 
 ## Content choices
 
-- **Villager:** Celtic female citizen (`units/celts/female_citizen.xml`), the
-  most medieval-looking gatherer. Animations: idle, walk, gather_wood (axe),
-  gather_gold (pick, 0 A.D. `gather_ore`), carry (wood bundle), build (mallet).
+- **Unit looks** (`unitLooks` in pack.json; identical animation set, frame
+  size, anchor and frame counts, so they are drop-in for each other):
+  `villager` and `villager_f` (Celtic female citizen, two dress/hair
+  variants), `villager_b` (Briton citizen spearman), `villager_c` (Gaul
+  citizen swordsman; its rigid cloak prop is dropped), `villager_d` (Iberian citizen spearman),
+  `villager_e` (Roman servus in a tunic). The men are turned into unarmed
+  workers: `resolve.py` swaps their soldier stance for 0 A.D.'s male labourer
+  stance (`base_slave_male`) and drops weapon/shield/helmet props, while the
+  gather/carry/build variants still add the axe, pick, wood bundle and mallet.
+  Animations: idle (8 frames), walk (12), gather_wood (8, axe), gather_gold
+  (8, pick; 0 A.D. `gather_ore`), carry (8, wood bundle), build (8, mallet).
 - **Buildings (Briton/Celt set):** civic centre (with its garrison banner, so
   the player colour shows) → `town_center`; house (2 variants); storehouse →
   `lumber_camp` and `mining_camp`; farmstead → `mill`; temple → `monastery`;
   barracks → `university`.
+- **Progression buildings:** market, blacksmith, defense_tower (Briton
+  wooden tower), sentry_tower (Briton scout tower), field (0 A.D. farmland
+  decal; flat), corral, fortress (variant 0: Gaul walled fortress; variant 1:
+  Briton broch), wonder (Briton ring fort, drawn at 7 px/m instead of 8.6),
+  palisade (straight), palisade_corner, gate; Gaul houses join `house.variants`.
+  Entities without any player-colour area (field, palisades, gate) ship a
+  single image (`playerColor: false`).
 - **Nature:** oak, birch and pine trees; temperate metal mine (gold), temperate
   stone quarry, berry bush.
 - **Terrain:** `terrain/ground.png`, a 1024×512 seamless iso ground: two
@@ -52,7 +67,11 @@ committing the pack.
 
 - 0 A.D. is antiquity, not the Middle Ages: Celtic roundhouses and thatch, not
   castles and cathedrals. Millennium A.D. was not evaluated (license check pending).
-- Only the female citizen is rendered; no scout/monk/knight/king yet.
+- Six villager looks, but no scout/monk/knight/king yet.
+- `structures/plot_field.xml` (the grain field with 3D crops) is 2009-era 3ds
+  Max COLLADA that Blender 4.5 imports as empty; the flat farmland decal
+  (`plot_field_new.xml`) is used instead. The Gaul wonder rendered fine but
+  was left out (it reads as a Roman camp, and the budget favoured unit looks).
 - Player colour on most Briton buildings is limited to small shields and
   banners (that is how 0 A.D. paints them), so building colour reads weakly at
   final size. Units carry it on the tartan dress and read well.
@@ -62,6 +81,10 @@ committing the pack.
 - The baked ground shows a faint repeat at the texture-period scale when
   zoomed out; there is no grass/dirt transition art beyond the dirt decals.
   The legacy diamond tiles have hard edges and lose texture detail.
+- Some gaia meshes float above their origin (0 A.D. drapes them on
+  terrain); `render.py` lowers gaia to touch the ground (fixed the floating
+  stone mine). The shadow catcher's faint whole-frame sky occlusion is
+  removed in `compose.py`.
 - Particle props (smoke, sparkles) are skipped; ground decals are drawn as
   flat textured quads.
 - Animation sampling is uniform over each clip; 0 A.D.'s `speed` attributes

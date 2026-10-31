@@ -33,7 +33,10 @@ SS = 2                           # supersampling factor (compose.py downscales)
 # Final-size pixels per metre for each kind (0 A.D. metres, i.e. engine units).
 SCALE = {"unit": 13.0, "building": 8.6, "gaia": 8.6}
 # Per-entity overrides (final px/m).
-ENTITY_SCALE = {"tree_0": 6.5, "tree_1": 6.5, "tree_2": 6.5}
+ENTITY_SCALE = {"tree_0": 6.5, "tree_1": 6.5, "tree_2": 6.5,
+                # The Briton wonder is a ~100 m ring fort; shrink it, but keep it
+                # the largest building.
+                "wonder": 7.0}
 UNIT_FRAME = (56, 64)            # final frame size for units (w, h)
 UNIT_FOOT = (28, 54)             # where the unit origin lands inside the frame
 
@@ -396,18 +399,38 @@ def apply_animation(armature, rel):
 
 
 # ---------------------------------------------------------------- rendering
-def world_bbox(objs):
+def world_bbox(objs, decals=False):
     dg = bpy.context.evaluated_depsgraph_get()
     pts = []
     for o in objs:
-        if o.type != "MESH" or o.name.startswith("decal"):
+        if o.type != "MESH" or (o.name.startswith("decal") and not decals):
             continue
         oe = o.evaluated_get(dg)
         for c in oe.bound_box:
             p = oe.matrix_world @ mathutils.Vector(c)
             p.z = max(p.z, 0.0)  # foundations below ground are hidden by the catcher
             pts.append(p)
+    if not pts and not decals:  # decal-only actors (flat fields)
+        return world_bbox(objs, decals=True)
     return pts
+
+
+def snap_to_ground(root, objs, sink=0.3):
+    """Some gaia meshes sit above their origin (the game drapes them on
+    terrain); lower them so they touch the ground and their shadow attaches."""
+    bpy.context.view_layer.update()
+    dg = bpy.context.evaluated_depsgraph_get()
+    zmin = None
+    for o in objs:
+        if o.type != "MESH" or o.name.startswith("decal"):
+            continue
+        oe = o.evaluated_get(dg)
+        for v in oe.data.vertices:
+            z = (oe.matrix_world @ v.co).z
+            zmin = z if zmin is None else min(zmin, z)
+    if zmin is not None and zmin > 0.05:
+        root.location.z -= zmin + sink
+        print(f"SNAP lowered by {zmin + sink:.2f} m")
 
 
 def frame_static(sc, cam, objs, pxm):
@@ -504,6 +527,8 @@ def render_entity(name, ent, outroot):
     else:
         sc, cam = reset()
         root, objs, arm = assemble(ent["parts"])
+        if kind == "gaia":
+            snap_to_ground(root, objs)
         fw, fh = frame_static(sc, cam, objs, pxm)
         sc.frame_set(1)
         render_to(sc, os.path.join(outroot, name, "static", "d0"), 0)

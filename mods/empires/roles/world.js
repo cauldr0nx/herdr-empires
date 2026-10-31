@@ -23,6 +23,7 @@ const SHIPPED = `${ASSETS}/packs/zeroad`;
 const LOCAL = "empires-packs/local";
 const FPS_CAP = 6;
 const SPEED = 55; // world px per second, walking
+const FLAT = new Set(["field"]);
 const STATS_EVERY = 10 * 60 * 1000; // repo stats (commits, age): gently
 const KIND_LABEL = { house: "House", lumber_camp: "Lumber camp", mining_camp: "Mining camp", mill: "Mill", market: "Market", blacksmith: "Blacksmith", university: "University", monastery: "Monastery", defense_tower: "Defense tower", sentry_tower: "Sentry tower", corral: "Corral", fortress: "Fortress", wonder: "Wonder" };
 
@@ -168,7 +169,7 @@ export default class World {
   }
 
   /** A Sims-style speech bubble over a unit's head: "?" needs you, "✓" done, "⚒" just started. */
-  bubble(kind, cxPx, now, since) {
+  bubble(kind, cxPx, now, since, headY = 0) {
     const look = {
       ask: { text: "?", fg: "#ffffff", bg: C.blocked, edge: "#fff6e8" },
       done: { text: "✓", fg: "#ffffff", bg: "#3e9e48", edge: "#fff6e8" },
@@ -178,29 +179,29 @@ export default class World {
     let b = div()
       .absolute()
       .left(cxPx - W / 2)
-      .top(-H - 14)
+      .top(headY - H - 10)
       .w(W)
       .h(H + 7)
       .child(div().absolute().left(0).top(0).w(W).h(H).rounded(7).bg(look.bg).border(1.5).border_color(look.edge).flex().items_center().justify_center().text_color(look.fg).font_weight(800).text_size(13).child(look.text))
       // The tail: a small triangle pointing at the head.
       .child(window.paint_path(PathBuilder.fill().move_to(W / 2 - 4, H - 1).line_to(W / 2 + 4, H - 1).line_to(W / 2, H + 6).close().build(), look.bg).absolute().top(0).left(0).w(W).h(H + 7));
-    if (!calm()) b = b.loop("top", { from: -H - 14, to: -H - 18, period: kind === "ask" ? 700 : 1400 });
+    if (!calm()) b = b.loop("top", { from: headY - H - 10, to: headY - H - 14, period: kind === "ask" ? 700 : 1400 });
     // A "started work" pop fades out over its few seconds.
     if (kind === "work") b = b.opacity(Math.max(0, 1 - (now - since) / 3500));
     return b;
   }
 
   /** A green plumb-bob over the selected (focused) unit. */
-  plumbob(cxPx) {
+  plumbob(cxPx, headY = 0) {
     const W = 10, H = 16;
     let p = window
       .paint_path(PathBuilder.fill().move_to(W / 2, 0).line_to(W, H / 2).line_to(W / 2, H).line_to(0, H / 2).close().build(), "#5fd35a")
       .absolute()
       .left(cxPx - W / 2)
-      .top(-H - 6)
+      .top(headY - H - 4)
       .w(W)
       .h(H);
-    if (!calm()) p = p.loop("top", { from: -H - 6, to: -H - 10, period: 1200 });
+    if (!calm()) p = p.loop("top", { from: headY - H - 4, to: headY - H - 8, period: 1200 });
     return p;
   }
 
@@ -239,10 +240,12 @@ export default class World {
     if (un.focused) body = body.child(div().absolute().left(f.ax - 14 * S * 2).top(f.ay - 6 * S * 2).w(28 * S * 2).h(12 * S * 2).rounded_full().border(2).border_color(C.goldBright));
     body = body.child(f.el);
     const since = this.changedAt[un.address] ?? 0;
-    if (un.status === "blocked") body = body.child(this.bubble("ask", f.ax, now, since));
-    else if (un.status === "done") body = body.child(this.bubble("done", f.ax, now, since));
-    else if (un.status === "working" && since && now - since < 3500) body = body.child(this.bubble("work", f.ax, now, since));
-    else if (un.focused) body = body.child(this.plumbob(f.ax));
+    // The head sits about 46 source px above the feet; the frame has empty space above it.
+    const head = Math.max(0, f.ay - (ent.headHeight ?? 46) * S);
+    if (un.status === "blocked") body = body.child(this.bubble("ask", f.ax, now, since, head));
+    else if (un.status === "done") body = body.child(this.bubble("done", f.ax, now, since, head));
+    else if (un.status === "working" && since && now - since < 3500) body = body.child(this.bubble("work", f.ax, now, since, head));
+    else if (un.focused) body = body.child(this.plumbob(f.ax, head));
     let el = div()
       .id(`unit-${key}`)
       .absolute()
@@ -474,6 +477,11 @@ export default class World {
         if (!name || !visible(ex.x, ex.y)) continue;
         const ent = ents[name];
         const rel = ent.variants ? ent.variants[hashStr(ex.id) % ent.variants.length] : ent.image;
+        // Flat things (a farm plot) lie on the ground, under every sprite.
+        if (FLAT.has(name)) {
+          tiles.push(this.sprite(ent, rel, town.slot, ex.x, ex.y, S, view));
+          continue;
+        }
         items.push({ y: ex.y, el: div().id(`ex-${ex.id}`).tooltip(`${KIND_LABEL[ex.kind] ?? ex.kind}: ${town.name} is level ${town.level}${town.stats?.commits ? ` (${town.stats.commits} commits)` : ""}`).child(this.sprite(ent, rel, town.slot, ex.x, ex.y, S, view)) });
       }
       const tcName = entityFallback(ents, "town_center");

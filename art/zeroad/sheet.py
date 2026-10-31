@@ -113,10 +113,12 @@ vanc = E["villager"]["anchor"]
 units = [("walk", "blue", 1, 2, 7, 4), ("gather_wood", "blue", 2, 5, 2, 3), ("carry", "blue", 6, 3, 4, 5),
          ("gather_gold", "red", 6, 7, 12, 7), ("idle", "blue", 0, 0, 8, 9), ("idle", "green", 7, 2, 9, 9),
          ("build", "yellow", 3, 4, 10, 4), ("walk", "purple", 4, 6, 9, 11), ("idle", "orange", 0, 3, 6, 10)]
-for anim, color, d, fr, i, j in units:
-    an = E["villager"]["anims"][anim]
+looks = pack.get("unitLooks", ["villager"])
+for k, (anim, color, d, fr, i, j) in enumerate(units):
+    look = looks[k % len(looks)]
+    an = E[look]["anims"][anim]
     fx, fy = foot(i, j)
-    put(sheet_frame("villager", anim, color, d % an["dirs"], fr % an["frames"]), vanc, fx, fy)
+    put(sheet_frame(look, anim, color, d % an["dirs"], fr % an["frames"]), E[look]["anchor"], fx, fy)
 
 for fy, fx, im, (ax, ay) in sorted(sprites, key=lambda s: (s[0], s[1])):
     scene.alpha_composite(im, (int(fx - ax), int(fy - ay)))
@@ -130,6 +132,16 @@ for anim, an in E["villager"]["anims"].items():
     for d in range(an["dirs"]):
         strip.alpha_composite(sheet_frame("villager", anim, "red", d, 0), (an["frames"] * vfw + 20 + d * vfw, 0))
     rows.append((anim, strip))
+for look in looks[1:]:
+    an = E[look]["anims"]
+    strip = Image.new("RGBA", (vfw * 30, vfh), (0, 0, 0, 0))
+    x = 0
+    for anim in ("idle", "walk", "gather_wood", "gather_gold", "carry", "build"):
+        for d in (0, 2, 5):
+            strip.alpha_composite(sheet_frame(look, anim, "blue", d, an[anim]["frames"] // 2), (x, 0))
+            x += vfw
+        x += 6
+    rows.append((look, strip))
 colors = Image.new("RGBA", (vfw * 8, vfh), (0, 0, 0, 0))
 for k, c in enumerate(pack["playerColors"]):
     colors.alpha_composite(sheet_frame("villager", "idle", c, 0, 0), (k * vfw, 0))
@@ -174,6 +186,37 @@ y += tiles.height + 10
 out.alpha_composite(icons, (100, y))
 y += icons.height + 10
 out.alpha_composite(tcs, (10, y))
+# Gallery: every building / nature image at final size on the ground.
+gal_names = [n for n, e in E.items() if "anims" not in e]
+items = []
+for n in gal_names:
+    e = E[n]
+    for k, rel in enumerate(e.get("variants") or [e["image"]]):
+        items.append((f"{n}" + (f" #{k}" if "variants" in e else ""), img(rel.format(color="red")), e))
+GW = 1424
+x = y = 0
+rowh = 0
+placed = []
+for label, im, e in items:
+    if x + im.width > GW:
+        x, y = 0, y + rowh + 16
+        rowh = 0
+    placed.append((label, im, x, y))
+    x += im.width + 6
+    rowh = max(rowh, im.height)
+gal = Image.new("RGBA", (GW, y + rowh + 16), (0, 0, 0, 255))
+if ground:
+    for yy in range(0, gal.height, img(ground).height):
+        for xx in range(0, GW, img(ground).width):
+            gal.alpha_composite(img(ground), (xx, yy))
+gd = ImageDraw.Draw(gal)
+for label, im, x0, y0 in placed:
+    gal.alpha_composite(im, (x0, y0))
+    gd.text((x0 + 2, y0 + im.height), label + f" {im.width}x{im.height}", fill=(255, 255, 255, 255))
+big = Image.new("RGBA", (max(out.width, GW), out.height + gal.height + 10), (58, 64, 52, 255))
+big.alpha_composite(out, (0, 0))
+big.alpha_composite(gal, (0, out.height + 10))
+out = big
 if ground:
     g = img(ground)
     t3 = Image.new("RGBA", (g.width * 3, g.height * 3))

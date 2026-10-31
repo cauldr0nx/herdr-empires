@@ -85,6 +85,14 @@ pack `LICENSE` is the CC legal code text, which contains no addresses.
 - Static entities with several images (`house`, `tree`) put every variant on
   one canvas size with one anchor, so `variants` stay plain strings.
 - Buildings are coloured (`{color}` in the path); nature is not.
+- `unitLooks` lists six interchangeable unit entities (`villager`,
+  `villager_b` … `villager_f`): same anim names, frame counts, `frame` and
+  `anchor`. Sheet paths: `units/<look-with-dashes>-<anim-with-dashes>-{color}.png`.
+- Progression buildings: `market`, `blacksmith`, `defense_tower`,
+  `sentry_tower`, `field`, `corral`, `fortress` (2 variants), `wonder`,
+  `palisade`, `palisade_corner`, `gate`. `playerColor: false` entities
+  (`field`, palisades, `gate`) have a plain `image` path with no `{color}`.
+  `field` is a flat ground decal: draw it with the ground layer, not depth-sorted.
 - Villager anim names: `idle`, `walk`, `gather_wood`, `gather_gold`, `carry`,
   `build`. There is no `gather_stone`/`gather_food`; fall back to
   `gather_gold` (pick) and `gather_wood` or `build` respectively.

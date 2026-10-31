@@ -1,5 +1,13 @@
 {
  "name": "zeroad",
+ "unitLooks": [
+  "villager",
+  "villager_b",
+  "villager_c",
+  "villager_d",
+  "villager_e",
+  "villager_f"
+ ],
  "title": "0 A.D. (CC BY-SA 3.0)",
  "license": "CC-BY-SA-3.0",
  "attribution": "Art derived from 0 A.D. by Wildfire Games (https://www.wildfiregames.com/), CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/)",
@@ -92,112 +100,370 @@
      "sheet": "units/villager-walk-{color}.png"
     },
     "gather_wood": {
-     "fps": 10,
+     "fps": 7,
      "dirs": 8,
-     "frames": 12,
+     "frames": 8,
      "sheet": "units/villager-gather-wood-{color}.png"
     },
     "gather_gold": {
-     "fps": 10,
+     "fps": 7,
      "dirs": 8,
-     "frames": 12,
+     "frames": 8,
      "sheet": "units/villager-gather-gold-{color}.png"
     },
     "carry": {
-     "fps": 12,
+     "fps": 9,
      "dirs": 8,
-     "frames": 12,
+     "frames": 8,
      "sheet": "units/villager-carry-{color}.png"
     },
     "build": {
-     "fps": 10,
+     "fps": 7,
      "dirs": 8,
-     "frames": 12,
+     "frames": 8,
      "sheet": "units/villager-build-{color}.png"
     }
    },
-   "source": "0 A.D. actor units/celts/female_citizen.xml",
+   "source": "Celtic female citizen (0 A.D. actor units/celts/female_citizen.xml)",
+   "scale_px_per_m": 13.0
+  },
+  "villager_b": {
+   "anchor": [
+    28,
+    54
+   ],
+   "frame": [
+    57,
+    65
+   ],
+   "anims": {
+    "idle": {
+     "fps": 6,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-b-idle-{color}.png"
+    },
+    "walk": {
+     "fps": 12,
+     "dirs": 8,
+     "frames": 12,
+     "sheet": "units/villager-b-walk-{color}.png"
+    },
+    "gather_wood": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-b-gather-wood-{color}.png"
+    },
+    "gather_gold": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-b-gather-gold-{color}.png"
+    },
+    "carry": {
+     "fps": 9,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-b-carry-{color}.png"
+    },
+    "build": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-b-build-{color}.png"
+    }
+   },
+   "source": "Briton citizen spearman, as unarmed worker (0 A.D. actor units/britons/infantry_spearman_b.xml)",
+   "scale_px_per_m": 13.0
+  },
+  "villager_c": {
+   "anchor": [
+    28,
+    54
+   ],
+   "frame": [
+    57,
+    65
+   ],
+   "anims": {
+    "idle": {
+     "fps": 6,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-c-idle-{color}.png"
+    },
+    "walk": {
+     "fps": 12,
+     "dirs": 8,
+     "frames": 12,
+     "sheet": "units/villager-c-walk-{color}.png"
+    },
+    "gather_wood": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-c-gather-wood-{color}.png"
+    },
+    "gather_gold": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-c-gather-gold-{color}.png"
+    },
+    "carry": {
+     "fps": 9,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-c-carry-{color}.png"
+    },
+    "build": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-c-build-{color}.png"
+    }
+   },
+   "source": "Gaul citizen swordsman, as unarmed worker (0 A.D. actor units/gauls/infantry_swordsman_b.xml)",
+   "scale_px_per_m": 13.0
+  },
+  "villager_d": {
+   "anchor": [
+    28,
+    54
+   ],
+   "frame": [
+    57,
+    65
+   ],
+   "anims": {
+    "idle": {
+     "fps": 6,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-d-idle-{color}.png"
+    },
+    "walk": {
+     "fps": 12,
+     "dirs": 8,
+     "frames": 12,
+     "sheet": "units/villager-d-walk-{color}.png"
+    },
+    "gather_wood": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-d-gather-wood-{color}.png"
+    },
+    "gather_gold": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-d-gather-gold-{color}.png"
+    },
+    "carry": {
+     "fps": 9,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-d-carry-{color}.png"
+    },
+    "build": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-d-build-{color}.png"
+    }
+   },
+   "source": "Iberian citizen spearman, as unarmed worker (0 A.D. actor units/iberians/infantry_spearman_b.xml)",
+   "scale_px_per_m": 13.0
+  },
+  "villager_e": {
+   "anchor": [
+    28,
+    54
+   ],
+   "frame": [
+    57,
+    65
+   ],
+   "anims": {
+    "idle": {
+     "fps": 6,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-e-idle-{color}.png"
+    },
+    "walk": {
+     "fps": 12,
+     "dirs": 8,
+     "frames": 12,
+     "sheet": "units/villager-e-walk-{color}.png"
+    },
+    "gather_wood": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-e-gather-wood-{color}.png"
+    },
+    "gather_gold": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-e-gather-gold-{color}.png"
+    },
+    "carry": {
+     "fps": 9,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-e-carry-{color}.png"
+    },
+    "build": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-e-build-{color}.png"
+    }
+   },
+   "source": "Roman servus (tunic), as unarmed worker (0 A.D. actor units/romans/infantry_swordsman_servus.xml)",
+   "scale_px_per_m": 13.0
+  },
+  "villager_f": {
+   "anchor": [
+    28,
+    54
+   ],
+   "frame": [
+    57,
+    65
+   ],
+   "anims": {
+    "idle": {
+     "fps": 6,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-f-idle-{color}.png"
+    },
+    "walk": {
+     "fps": 12,
+     "dirs": 8,
+     "frames": 12,
+     "sheet": "units/villager-f-walk-{color}.png"
+    },
+    "gather_wood": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-f-gather-wood-{color}.png"
+    },
+    "gather_gold": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-f-gather-gold-{color}.png"
+    },
+    "carry": {
+     "fps": 9,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-f-carry-{color}.png"
+    },
+    "build": {
+     "fps": 7,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-f-build-{color}.png"
+    }
+   },
+   "source": "Celtic female citizen, second dress/hair variant (0 A.D. actor units/celts/female_citizen.xml)",
    "scale_px_per_m": 13.0
   },
   "town_center": {
    "anchor": [
-    225,
+    145,
     135
    ],
    "size": [
-    458,
-    259
+    315,
+    213
    ],
    "source": "Briton civic centre",
+   "playerColor": true,
    "scale_px_per_m": 8.6,
    "image": "buildings/town-center-{color}.png"
   },
   "house": {
    "anchor": [
-    94,
-    62
+    67,
+    73
    ],
    "size": [
-    178,
-    116
+    141,
+    108
    ],
-   "source": "Briton house (two variants)",
+   "source": "Briton house (2 variants) and Gaul house (2 variants)",
+   "playerColor": true,
    "scale_px_per_m": 8.6,
    "image": "buildings/house-0-{color}.png",
    "variants": [
     "buildings/house-0-{color}.png",
-    "buildings/house-1-{color}.png"
+    "buildings/house-1-{color}.png",
+    "buildings/house-2-{color}.png",
+    "buildings/house-3-{color}.png"
    ]
   },
   "lumber_camp": {
    "anchor": [
-    116,
-    148
+    87,
+    97
    ],
    "size": [
-    265,
-    211
+    219,
+    143
    ],
    "source": "Briton storehouse",
+   "playerColor": true,
    "scale_px_per_m": 8.6,
    "image": "buildings/storehouse-{color}.png"
   },
   "mining_camp": {
    "anchor": [
-    116,
-    148
+    87,
+    97
    ],
    "size": [
-    265,
-    211
+    219,
+    143
    ],
    "source": "Briton storehouse",
+   "playerColor": true,
    "scale_px_per_m": 8.6,
    "image": "buildings/storehouse-{color}.png"
   },
   "mill": {
    "anchor": [
-    99,
-    111
+    95,
+    96
    ],
    "size": [
-    221,
-    160
+    195,
+    144
    ],
    "source": "Celtic farmstead",
+   "playerColor": true,
    "scale_px_per_m": 8.6,
    "image": "buildings/farmstead-{color}.png"
   },
   "monastery": {
    "anchor": [
-    161,
+    144,
     170
    ],
    "size": [
-    359,
-    261
+    297,
+    248
    ],
    "source": "Celtic temple",
+   "playerColor": true,
    "scale_px_per_m": 8.6,
    "image": "buildings/temple-{color}.png"
   },
@@ -208,20 +474,179 @@
    ],
    "size": [
     370,
-    269
+    262
    ],
    "source": "Briton barracks",
+   "playerColor": true,
    "scale_px_per_m": 8.6,
    "image": "buildings/barracks-{color}.png"
   },
-  "tree": {
+  "market": {
    "anchor": [
-    103,
-    145
+    139,
+    106
    ],
    "size": [
-    246,
-    197
+    291,
+    185
+   ],
+   "source": "Briton market",
+   "playerColor": true,
+   "scale_px_per_m": 8.6,
+   "image": "buildings/market-{color}.png"
+  },
+  "blacksmith": {
+   "anchor": [
+    107,
+    117
+   ],
+   "size": [
+    251,
+    175
+   ],
+   "source": "Briton blacksmith",
+   "playerColor": true,
+   "scale_px_per_m": 8.6,
+   "image": "buildings/blacksmith-{color}.png"
+  },
+  "defense_tower": {
+   "anchor": [
+    57,
+    119
+   ],
+   "size": [
+    139,
+    147
+   ],
+   "source": "Briton wooden (defense) tower",
+   "playerColor": true,
+   "scale_px_per_m": 8.6,
+   "image": "buildings/defense-tower-{color}.png"
+  },
+  "sentry_tower": {
+   "anchor": [
+    52,
+    154
+   ],
+   "size": [
+    157,
+    183
+   ],
+   "source": "Briton scout tower",
+   "playerColor": true,
+   "scale_px_per_m": 8.6,
+   "image": "buildings/sentry-tower-{color}.png"
+  },
+  "field": {
+   "anchor": [
+    206,
+    108
+   ],
+   "size": [
+    407,
+    207
+   ],
+   "source": "0 A.D. farmland plot (flat ground decal)",
+   "playerColor": false,
+   "scale_px_per_m": 8.6,
+   "image": "buildings/field.png"
+  },
+  "corral": {
+   "anchor": [
+    93,
+    111
+   ],
+   "size": [
+    242,
+    166
+   ],
+   "source": "Briton corral",
+   "playerColor": true,
+   "scale_px_per_m": 8.6,
+   "image": "buildings/corral-{color}.png"
+  },
+  "fortress": {
+   "anchor": [
+    184,
+    193
+   ],
+   "size": [
+    383,
+    271
+   ],
+   "source": "Gaul fortress (variant 0, walled, castle-like) and Briton fortress / broch (variant 1)",
+   "playerColor": true,
+   "scale_px_per_m": 8.6,
+   "image": "buildings/fortress-0-{color}.png",
+   "variants": [
+    "buildings/fortress-0-{color}.png",
+    "buildings/fortress-1-{color}.png"
+   ]
+  },
+  "wonder": {
+   "anchor": [
+    220,
+    186
+   ],
+   "size": [
+    462,
+    300
+   ],
+   "source": "Briton wonder (ring fort), rendered at a smaller scale",
+   "playerColor": true,
+   "scale_px_per_m": 7.0,
+   "image": "buildings/wonder-{color}.png"
+  },
+  "palisade": {
+   "anchor": [
+    53,
+    69
+   ],
+   "size": [
+    125,
+    95
+   ],
+   "source": "0 A.D. rock-footed palisade, one straight segment",
+   "playerColor": false,
+   "scale_px_per_m": 8.6,
+   "image": "buildings/palisade.png"
+  },
+  "palisade_corner": {
+   "anchor": [
+    39,
+    82
+   ],
+   "size": [
+    118,
+    104
+   ],
+   "source": "0 A.D. rock-footed palisade, curved corner",
+   "playerColor": false,
+   "scale_px_per_m": 8.6,
+   "image": "buildings/palisade-corner.png"
+  },
+  "gate": {
+   "anchor": [
+    57,
+    83
+   ],
+   "size": [
+    136,
+    111
+   ],
+   "source": "0 A.D. palisade gate",
+   "playerColor": false,
+   "scale_px_per_m": 8.6,
+   "image": "buildings/gate.png"
+  },
+  "tree": {
+   "anchor": [
+    58,
+    129
+   ],
+   "size": [
+    168,
+    159
    ],
    "scale_px_per_m": 6.5,
    "source": "flora/trees/oak_new.xml, flora/trees/euro_birch_tree.xml, flora/trees/pine.xml",
@@ -233,12 +658,12 @@
   },
   "gold_mine": {
    "anchor": [
-    83,
+    61,
     58
    ],
    "size": [
-    175,
-    110
+    126,
+    98
    ],
    "scale_px_per_m": 8.6,
    "source": "geology/metal_temperate_round.xml",
@@ -246,12 +671,12 @@
   },
   "stone_mine": {
    "anchor": [
-    135,
-    212
+    88,
+    105
    ],
    "size": [
-    303,
-    242
+    197,
+    127
    ],
    "scale_px_per_m": 8.6,
    "source": "geology/stonemine_temperate_quarry.xml",
@@ -259,12 +684,12 @@
   },
   "berry_bush": {
    "anchor": [
-    59,
-    67
+    55,
+    41
    ],
    "size": [
-    148,
-    105
+    112,
+    68
    ],
    "scale_px_per_m": 8.6,
    "source": "props/flora/berry_bush.xml",

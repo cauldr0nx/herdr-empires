@@ -16,8 +16,8 @@ Built by `art/zeroad/build.sh` (see `art/zeroad/README.md`); do not edit by hand
 | Path | Contents |
 |---|---|
 | `pack.json` | the pack descriptor (SPEC §18.4) |
-| `units/villager-<anim>-<color>.png` | sprite sheets: one row per direction, frames left to right |
-| `buildings/<name>-<color>.png` | one image per building and player colour |
+| `units/<look>-<anim>-<color>.png` | sprite sheets for the six unit looks in `unitLooks` (one row per direction, frames left to right) |
+| `buildings/<name>[-<variant>]-<color>.png` | one image per building (variant) and player colour; `buildings/<name>.png` when the model has no player colour |
 | `nature/*.png` | trees (variants), gold mine, stone mine, berry bush |
 | `terrain/ground.png` | 1024×512 seamless iso grass (tiles in x and y); `terrain.ground` / `terrain.groundSize`. Prefer it over the diamond tiles. |
 | `terrain/dirt-patch-*.png` | 400×200 soft-edged dirt decals (entity `dirt_patch`, anchor = centre), for under town centres |
