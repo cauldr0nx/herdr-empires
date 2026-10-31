@@ -184,9 +184,22 @@ export function transitions(prev, agents, now) {
   return { changes: out, statuses: seen };
 }
 
-/** A task counts as completed when an agent goes working -> done (or working -> idle after a long run). */
+/** A task counts as completed when an agent reaches done (from any other status, e.g.
+ *  blocked -> done after the person answered), or goes working -> idle. */
 export function completions(changes) {
-  return changes.filter((c) => c.from === "working" && (c.to === "done" || c.to === "idle")).length;
+  return changes.filter((c) => (c.to === "done" && c.from !== "done" && c.from !== null) || (c.from === "working" && c.to === "idle")).length;
+}
+
+/** A tab's name for the unit card: only one someone named (an unnamed tab is just its number). */
+export function tabLabel(tab) {
+  return tab && tab.named && tab.name ? tab.name : "";
+}
+
+/** `town · place · branch` with repeats dropped (a space named after its folder). */
+export function locationLine(town, place, branch) {
+  const out = [];
+  for (const x of [town, place, branch]) if (x && !out.includes(x)) out.push(x);
+  return out.join(" · ");
 }
 
 /** Per-town score-screen rows from a chronicle log: { town, completed, blocked, working_ms, blocked_ms }. */
@@ -402,4 +415,194 @@ export function nameTargets(agents, addresses) {
 /** A Captain's army: its direct children among the terminals, alive first. */
 export function army(terminals, captainAddress) {
   return subAgents(terminals, captainAddress);
+}
+
+// ---- the world layer (SPEC §18): towns, buildings, units, as pure functions
+
+/** A stable 32-bit hash of a string (FNV-1a), for seeded layouts that survive restarts. */
+export function hashStr(s) {
+  let h = 0x811c9dc5;
+  const str = String(s ?? "");
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h >>> 0;
+}
+
+/** A small seeded PRNG (mulberry32): returns a function giving floats in [0, 1). */
+export function seeded(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** The eight sheet directions, clockwise on screen from facing the viewer. */
+export const DIRS = ["S", "SW", "W", "NW", "N", "NE", "E", "SE"];
+
+/** The sheet direction for a screen-space movement (dx right, dy down). */
+export function dirFor(dx, dy) {
+  if (!dx && !dy) return "S";
+  // atan2 with screen y down: 0 = east. Map to S=0, SW=1, ... clockwise on screen.
+  const a = Math.atan2(dy, dx); // east 0, south +pi/2
+  const deg = ((a * 180) / Math.PI + 360) % 360; // 0 E, 90 S, 180 W, 270 N
+  const idx = Math.round(((deg - 90 + 360) % 360) / 45) % 8; // 0 S, 1 SW, 2 W, ...
+  return DIRS[idx];
+}
+
+/** The row of a direction in a sheet with `dirs` rows (8: all; 2: S and N; 1: S only). */
+export function dirRow(dir, dirs, order = DIRS) {
+  const i = Math.max(0, order.indexOf(dir));
+  if (dirs >= 8) return i;
+  if (dirs === 2) return i === 3 || i === 4 || i === 5 ? 1 : 0; // rows S, N: NW/N/NE face away
+  return 0;
+}
+
+/** Building kind for a tab: settled tabs are houses, shell-only tabs houses, agent tabs a workshop. */
+export function buildingKind(tab, agentsInTab) {
+  if (!tab) return "house";
+  if (tab.settled || !agentsInTab.length) return "house";
+  const kinds = ["lumber_camp", "mining_camp", "mill", "university", "monastery"];
+  return kinds[hashStr(tab.id) % kinds.length];
+}
+
+/** The resource a tab's units gather: stable per tab. */
+export function resourceKind(tabId) {
+  return ["wood", "gold", "stone", "food"][hashStr(`res:${tabId}`) % 4];
+}
+
+/** Where town `k` (0 = the active one) sits, in world px: a spiral, so neighbours ring the active town. */
+export function townOrigin(k, spacing = 1400) {
+  if (k === 0) return { x: 0, y: 0 };
+  const ring = Math.ceil((Math.sqrt(k + 1) - 1) / 2) || 1;
+  const a = k * 2.399963; // golden angle: evenly spread
+  return { x: Math.round(Math.cos(a) * spacing * ring), y: Math.round(Math.sin(a) * spacing * 0.5 * ring) };
+}
+
+/** Building and resource spots around a town center (world px, relative to the town origin). */
+export function townSites(seed, buildings) {
+  const r = seeded(seed);
+  const spots = [];
+  const n = Math.max(buildings, 1);
+  const start = r() * Math.PI * 2;
+  for (let i = 0; i < buildings; i++) {
+    const a = start + (i / n) * Math.PI * 2;
+    const rad = 230 + (i % 2) * 70;
+    spots.push({ x: Math.round(Math.cos(a) * rad), y: Math.round(Math.sin(a) * rad * 0.5) + 30 });
+  }
+  const forestA = start + Math.PI + (r() - 0.5);
+  const forest = [];
+  for (let i = 0; i < 14; i++) {
+    const a = forestA + (i - 7) * 0.13 + (r() - 0.5) * 0.08;
+    const rad = 520 + r() * 110;
+    forest.push({ x: Math.round(Math.cos(a) * rad), y: Math.round(Math.sin(a) * rad * 0.5), v: Math.floor(r() * 3) });
+  }
+  const at = (a, rad) => ({ x: Math.round(Math.cos(a) * rad), y: Math.round(Math.sin(a) * rad * 0.5) });
+  return {
+    buildings: spots,
+    forest,
+    nodes: {
+      wood: at(forestA, 470),
+      gold: at(forestA + 1.9, 470),
+      stone: at(forestA - 1.9, 480),
+      food: at(forestA + Math.PI, 330),
+    },
+  };
+}
+
+/**
+ * The whole world: towns (one per space) with buildings (one per tab) and units (one per
+ * agent), in world px. `activeSpace` goes to the origin. Units carry what the renderer needs:
+ * where they live, where they go, their status and colour slot. Caps per SPEC §18.3.
+ */
+export function worldModel({ spaces = [], agents = [], terminals = [], colors = null, maxUnits = 60, maxBuildings = 40 } = {}) {
+  const active = spaces.findIndex((s) => s.active);
+  const order = active > 0 ? [spaces[active], ...spaces.filter((_, i) => i !== active)] : spaces.slice();
+  const towns = [];
+  const units = [];
+  let buildingCount = 0;
+  order.forEach((s, k) => {
+    const index = spaces.indexOf(s);
+    const origin = townOrigin(k);
+    const tabs = (s.tabs ?? []).slice(0, Math.max(0, maxBuildings - buildingCount));
+    buildingCount += tabs.length;
+    const sites = townSites(hashStr(s.id), tabs.length);
+    const mine = agents.filter((a) => a.space === s.id);
+    const buildings = tabs.map((t, i) => {
+      const inTab = mine.filter((a) => a.tab === t.id);
+      return { tab: t.id, name: t.name, kind: buildingKind(t, inTab), settled: Boolean(t.settled), status: t.status ?? null, x: origin.x + sites.buildings[i].x, y: origin.y + sites.buildings[i].y };
+    });
+    const color = playerColor(s.id, index, colors);
+    const town = { space: s.id, name: s.name, active: Boolean(s.active), remote: Boolean(s.machine), color, slot: colorSlot(s.id, index, colors), x: origin.x, y: origin.y, buildings, forest: sites.forest.map((f) => ({ ...f, x: origin.x + f.x, y: origin.y + f.y })), nodes: Object.fromEntries(Object.entries(sites.nodes).map(([k2, p]) => [k2, { x: origin.x + p.x, y: origin.y + p.y }])), hidden: 0 };
+    towns.push(town);
+    mine.forEach((a, i) => {
+      const b = buildings.find((x) => x.tab === a.tab);
+      if (b?.settled) return; // garrisoned: inside, not drawn
+      if (units.length >= maxUnits) {
+        town.hidden++;
+        return;
+      }
+      const res = resourceKind(a.tab);
+      const ring = (i * 2.4) % (Math.PI * 2);
+      const idle = { x: origin.x + Math.round(Math.cos(ring) * (120 + (i % 3) * 26)), y: origin.y + 70 + Math.round(Math.sin(ring) * (40 + (i % 3) * 12)) };
+      // Waiting spots in front of the town center: a row of five, then a second row, so alerts never stack.
+      const door = { x: origin.x - 70 + (i % 5) * 36, y: origin.y + 92 + Math.floor((i % 10) / 5) * 30 };
+      const subs = terminals.filter((t) => t.parent === a.address).length;
+      units.push({ address: a.address, status: a.status, town: s.id, slot: town.slot, color, focused: Boolean(a.focused), name: a.program?.name ?? a.app ?? "Unit", tab: a.tab, home: b ? { x: b.x, y: b.y + 40 } : door, node: town.nodes[res], resource: res, idle, door, workers: subs });
+    });
+  });
+  return { towns, units };
+}
+
+/** Which colour slot name a space uses, matching playerColor(). */
+export function colorSlot(spaceId, index, colors) {
+  const names = ["blue", "red", "green", "yellow", "cyan", "purple", "gray", "orange"];
+  const slot = colors && typeof colors === "object" ? colors[spaceId] : null;
+  const m = typeof slot === "string" ? /^ansi(\d+)$/.exec(slot) : null;
+  if (m) {
+    const n = Number(m[1]);
+    if (n >= 1 && n <= 8) return names[n - 1];
+  }
+  return names[Math.max(0, index) % names.length];
+}
+
+/**
+ * Where a working unit is and what it does at time `t` (ms since its trip began), for a
+ * there-and-back trip of `period` ms with ease-in-out (the native loop's default): out with
+ * empty hands, gathering around the far end, back carrying. Returns { phase, leg, anim, dir }.
+ */
+export function tripState(t, period, from, to, resource = "wood") {
+  const p = (((t % period) + period) % period) / period; // 0 at home, 0.5 at the node
+  const outbound = p < 0.5;
+  const nearNode = Math.abs(p - 0.5) < 0.09;
+  const nearHome = p < 0.04 || p > 0.96;
+  const dir = outbound ? dirFor(to.x - from.x, to.y - from.y) : dirFor(from.x - to.x, from.y - to.y);
+  const anim = nearNode ? `gather_${resource}` : nearHome ? "idle" : outbound ? "walk" : "carry";
+  return { phase: p, leg: outbound ? "out" : "back", anim, dir };
+}
+
+/** Resolves an anim name through fallbacks a partial pack can satisfy. */
+export function animFallback(anims, name) {
+  const chain = { gather_stone: ["gather_stone", "gather_gold", "gather_wood", "walk"], gather_food: ["gather_food", "gather_wood", "walk"], gather_gold: ["gather_gold", "gather_wood", "walk"], gather_wood: ["gather_wood", "walk"], carry: ["carry", "walk"], walk: ["walk", "idle"], idle: ["idle", "walk"] }[name] ?? [name, "idle"];
+  for (const n of chain) if (anims?.[n]) return n;
+  return null;
+}
+
+/** Resolves an entity through fallbacks (SPEC §18.4). */
+export function entityFallback(entities, name) {
+  const chain = { university: ["university", "monastery", "house"], monastery: ["monastery", "university", "house"], mill: ["mill", "house"], lumber_camp: ["lumber_camp", "mining_camp", "house"], mining_camp: ["mining_camp", "lumber_camp", "house"], stone_mine: ["stone_mine", "gold_mine"], berry_bush: ["berry_bush", "tree"] }[name] ?? [name];
+  for (const n of chain) if (entities?.[n]) return n;
+  return null;
+}
+
+/** The view modes (SPEC §18.2), cycled by empires.view. */
+export const VIEWS = ["split", "map", "terminals"];
+export function nextView(v) {
+  const i = VIEWS.indexOf(v);
+  return VIEWS[((i < 0 ? 0 : i) + 1) % VIEWS.length]; // unknown counts as the default, split
 }

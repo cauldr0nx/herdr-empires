@@ -12,6 +12,8 @@
     "hygiene": "sh tools/hygiene-check.sh",
     "contrast": "bun tools/contrast.ts",
     "art": "bun art/generate.ts && bun art/textures.ts && bun art/sounds.ts",
-    "verify": "bun test && bun tools/check.ts mods/empires && bun tools/asset-check.ts && sh tools/hygiene-check.sh"
+    "verify": "bun test && bun tools/check.ts mods/empires && bun tools/asset-check.ts && sh tools/hygiene-check.sh",
+    "import-aoe2de": "bun tools/aoe2de-import/main.ts",
+    "test:aoe2de": "bun test tests/aoe2de"
   }
 }

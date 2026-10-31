@@ -10,6 +10,8 @@
 #   tools/install.sh [--home DIR] update  [--switch]
 #   tools/install.sh [--home DIR] uninstall
 #   tools/install.sh [--home DIR] status
+#   tools/install.sh [--home DIR] import-aoe2de|import-local [--source DIR] [--list] [--dry-run]
+#   tools/install.sh [--home DIR] uninstall --purge   (also removes empires-packs/)
 #
 # The app home is --home, else $HERDR_APP_HOME, else $XDG_CONFIG_HOME/herdr-app,
 # else ~/.config/herdr-app (how herdr-app resolves it on every platform).
@@ -20,12 +22,19 @@ home=""
 cmd=""
 switch=0
 templates=0
+source_dir=""
+importer_args=""
+purge=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --home) home=$2; shift ;;
     --switch) switch=1 ;;
     --templates) templates=1 ;;
-    install|update|uninstall|status) cmd=$1 ;;
+    --source) source_dir=$2; shift ;;
+    --list|--dry-run|--no-shadow) importer_args="$importer_args $1" ;;
+    --purge) purge=1 ;;
+    install|update|uninstall|status|import-aoe2de) cmd=$1 ;;
+    import-local) cmd=import-aoe2de ;;
     -h|--help) sed -n '2,13p' "$0"; exit 0 ;;
     *) echo "install.sh: unknown argument $1" >&2; exit 2 ;;
   esac
@@ -92,25 +101,31 @@ copy_file() { # copy_file SRC DST
   say "wrote $dst"
 }
 
-copy_mod() { # the mod folder: refuse a foreign one, prune files we no longer ship, copy ours
+copy_mod() { # the mod folder: refuse a foreign one, then swap in a complete staged copy
   src="$here/mods/empires"
   dst="${home:?}/mods/empires"
   if [ -d "$dst" ] && ! ours "$dst"; then
     die "refusing to overwrite $dst: it is not a Herdr Empires folder (no .empires-version). Move it aside and run again."
   fi
-  mkdir -p "$dst"
-  if [ -f "$dst/.empires-version" ]; then
-    (cd "$dst" && find . -type f) | while read -r f; do
-      if [ ! -e "$src/$f" ]; then
-        rm -f -- "${dst:?}/${f:?}"
-        say "removed $dst/$f (no longer shipped)"
-      fi
-    done
-  fi
-  (cd "$src" && find . -type d) | while read -r d; do mkdir -p "$dst/$d"; done
+  # Herdr hot-reloads a mod on every file save. Copying file by file into the live folder
+  # shows it a run of half-updated states, so stage a full copy beside the app home's mods
+  # (a hidden folder, which Herdr ignores) and swap it in with two renames.
+  stage="${home:?}/.empires-stage-$$"
+  old="${home:?}/.empires-old-$$"
+  rm -rf -- "${stage:?}" "${old:?}"
+  mkdir -p "$stage" "$home/mods"
+  (cd "$src" && find . -type d) | while read -r d; do mkdir -p "$stage/$d"; done
   (cd "$src" && find . -type f) | while read -r f; do
-    cp "$src/$f" "$dst/$f" || die "cannot write $dst/$f"
+    cp "$src/$f" "$stage/$f" || { rm -rf -- "${stage:?}"; die "cannot write $stage/$f"; }
   done
+  if [ -d "$dst" ]; then
+    (cd "$dst" && find . -type f) | while read -r f; do
+      [ -e "$src/$f" ] || say "removed $dst/$f (no longer shipped)"
+    done
+    mv "$dst" "$old" || { rm -rf -- "${stage:?}"; die "cannot move $dst aside"; }
+  fi
+  mv "$stage" "$dst" || { [ -d "$old" ] && mv "$old" "$dst"; die "cannot move the new mod into $dst (previous version restored)"; }
+  rm -rf -- "${old:?}"
   say "wrote $dst/ ($(cd "$src" && find . -type f | wc -l | tr -d ' ') files)"
 }
 
@@ -176,10 +191,21 @@ check_mod() {
   fi
 }
 
+wait_window() { # a busy window (reloading mods, switching layouts) answers late: wait up to 30 s
+  n=0
+  while [ $n -lt 60 ]; do
+    HERDR_APP_HOME="$home" herdr-app status 2>/dev/null | grep -q '"layout"' && return 0
+    sleep 0.5; n=$((n + 1))
+  done
+  return 1
+}
+
 do_switch() { # do_switch NAME
   if command -v herdr-app >/dev/null 2>&1; then
     say "running: herdr-app do layout.switch --name $1"
-    HERDR_APP_HOME="$home" herdr-app do layout.switch --name "$1" 2>/dev/null || say "layout.switch failed (is Herdr running on this home?)"
+    wait_window || { say "the Herdr window on $home is not answering; switch with ctrl-shift-l"; return 0; }
+    HERDR_APP_HOME="$home" herdr-app do layout.switch --name "$1" >/dev/null 2>&1 || say "layout.switch failed (is Herdr running on this home?)"
+    wait_window || true
   else
     say "herdr-app not on PATH: switch with ctrl-shift-l or Settings → Look"
   fi
@@ -235,6 +261,17 @@ remove_ours() { # remove_ours RELATIVE-FILE: delete one of our files, never a fo
 # ---- commands
 
 case "$cmd" in
+  import-aoe2de)
+    # Builds empires-packs/aoe2de/ from the person's own game install (SPEC §18.6). Never automatic.
+    bun=""
+    bun --version >/dev/null 2>&1 && bun=bun   # a version manager's shim can exist without a working bun
+    [ -n "$bun" ] || { command -v mise >/dev/null 2>&1 && mise x bun@latest -- bun --version >/dev/null 2>&1 && bun="mise x bun@latest -- bun"; }
+    [ -n "$bun" ] || { echo "install.sh: import-aoe2de needs Bun (https://bun.sh)" >&2; exit 2; }
+    set -- --home "$home"
+    [ -n "$source_dir" ] && set -- "$@" --source "$source_dir"
+    # shellcheck disable=SC2086
+    exec $bun "$here/tools/aoe2de-import/main.ts" "$@" $importer_args
+    ;;
   status)
     say "app home: $home"
     for f in layouts/empires.json layouts/empires.svg themes/empires.json themes/empires-parchment.json themes/empires-dusk.json mods/empires; do
@@ -278,6 +315,7 @@ case "$cmd" in
     if [ -d "$home/data/empires" ]; then rm -rf -- "${home:?}/data/empires" && say "removed $home/data/empires/ (mod storage)"; fi
     if [ -f "$home/layouts/.state/empires.json" ]; then rm -f -- "${home:?}/layouts/.state/empires.json" && say "removed $home/layouts/.state/empires.json (clicks)"; fi
     if grep -q '"layout:empires"' "$home/keys.json" 2>/dev/null; then merge_keys remove; fi
+    if [ "$purge" = 1 ] && [ -d "$home/empires-packs" ]; then rm -rf -- "${home:?}/empires-packs" && say "removed $home/empires-packs/ (local art packs)"; fi
     say "done. Herdr's own state files (shared.json, view.json, ...) were left alone; shared keys empires.* stay in shared.json until Herdr prunes them."
     ;;
 esac

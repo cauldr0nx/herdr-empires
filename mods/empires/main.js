@@ -8,6 +8,7 @@
 //   herald     the floating advisor
 //   menu       a parchment popup menu
 //   dialog     every dialog (prompt, confirm, options, techtree, chronicle, about, screens)
+//   world      the isometric map: spaces as towns, agents as units (SPEC §18)
 // `herdr-app check` loads the mod with props() = null: render a placeholder then.
 
 import { View, div } from "gpui-kit";
@@ -20,8 +21,9 @@ import Minimap from "./roles/minimap.js";
 import Herald from "./roles/herald.js";
 import Menu from "./roles/menu.js";
 import Dialog from "./roles/dialog.js";
+import World from "./roles/world.js";
 
-const ROLES = { resources: Resources, banner: Banner, command: Command, selection: Selection, minimap: Minimap, herald: Herald, menu: Menu, dialog: Dialog };
+const ROLES = { resources: Resources, banner: Banner, command: Command, selection: Selection, minimap: Minimap, herald: Herald, menu: Menu, dialog: Dialog, world: World };
 
 export default class Empires extends View {
   init(p, cx) {

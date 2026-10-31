@@ -121,15 +121,15 @@ picture("food", [
   ]),
   path("M16 4c-3 0-4 3-4 6 2 0 4-2 4-6zM16 4c3 0 4 3 4 6-2 0-4-2-4-6z", f(P.wheat)),
 ].join(""));
-picture("wood", [
-  path("M4 10h20a4 4 0 0 1 0 8H4z", f(P.bark)),
-  path("M4 10h20a4 4 0 0 1 0 8", stroke(P.barkDark, 1.2)),
-  `<ellipse cx="4" cy="14" rx="3" ry="4"${f("#c9a06a")}/>`,
-  `<ellipse cx="4" cy="14" rx="1.6" ry="2.2"${f("#a07a48")}/>`,
-  path("M6 20h20a4 4 0 0 1 0 8H6z", f(P.bark)),
-  path("M6 20h20a4 4 0 0 1 0 8", stroke(P.barkDark, 1.2)),
-  `<ellipse cx="6" cy="24" rx="3" ry="4"${f("#c9a06a")}/>`,
-  `<ellipse cx="6" cy="24" rx="1.6" ry="2.2"${f("#a07a48")}/>`,
+picture("res-wood", [
+  path("M4 10h20a4 4 0 0 1 0 8H4z", f("#b8804a")),
+  path("M4 10h20a4 4 0 0 1 0 8", stroke("#f0d7a4", 1.2)),
+  `<ellipse cx="4" cy="14" rx="3" ry="4"${f("#f3dcab")}/>`,
+  `<ellipse cx="4" cy="14" rx="1.6" ry="2.2"${f("#c08a52")}/>`,
+  path("M6 20h20a4 4 0 0 1 0 8H6z", f("#b8804a")),
+  path("M6 20h20a4 4 0 0 1 0 8", stroke("#f0d7a4", 1.2)),
+  `<ellipse cx="6" cy="24" rx="3" ry="4"${f("#f3dcab")}/>`,
+  `<ellipse cx="6" cy="24" rx="1.6" ry="2.2"${f("#c08a52")}/>`,
   path("M9 12h12M11 15h10M11 22h12M13 25h10", stroke(P.barkDark, 0.8) + ' stroke-opacity="0.6"'),
 ].join(""));
 picture("gold", [

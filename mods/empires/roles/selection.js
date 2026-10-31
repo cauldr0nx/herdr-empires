@@ -7,14 +7,18 @@ import { div, image } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { spaces, panes, terminals, focused, run, home, shared, setShared, agents } from "herdr";
 import { C, ASSETS, FONT_SC, unit, root, stone, heading, programIcon, statusBar, statusBadge, label, own, glyph } from "../kit.js";
-import { unitName, placeName, tabPosition, subAgents, isAgentPane, elapsed, playerColor, selectedUnits, nameTargets, toggleSelected } from "../data.js";
+import { unitName, placeName, tabLabel, locationLine, tabPosition, subAgents, isAgentPane, elapsed, playerColor, selectedUnits, nameTargets, toggleSelected } from "../data.js";
 import { queueLine, commandMode } from "./queue.js";
 
 const BUILDING = (t) => (t.status === "blocked" ? "tower" : t.settled ? "garrison" : "house");
 
 export default class Selection {
-  init() {
+  init(_p, cx) {
     this.now = Date.now();
+    // The elapsed time on a working unit's card: a gentle data tick, only while one is working.
+    cx?.timer?.every(5000, (cx) => {
+      if (agents().some((a) => a.status === "working")) cx.notify();
+    });
   }
 
   worker(u, t) {
@@ -34,7 +38,7 @@ export default class Selection {
     const workers = p.terminal ? subAgents(terminals(), p.terminal) : [];
     const tab = town?.tab;
     const since = tab?.working_since;
-    const where = [town?.space?.name, placeName(p.cwd, home()), p.branch].filter(Boolean).join(" · ");
+    const where = locationLine(town?.space?.name, placeName(p.cwd, home()), p.branch);
     const color = town ? playerColor(town.space.id, town.index, shared("space.colors")) : C.idle;
     return h_flex()
       .size_full()
@@ -53,7 +57,7 @@ export default class Selection {
           .flex_1()
           .min_w(0)
           .gap(u(2))
-          .child(h_flex().items_center().gap(u(6)).child(heading(u, unitName(p), { size: 13 })).child(div().truncate().text_color(C.textDim).child(tab?.name ? `“${tab.name}”` : "")))
+          .child(h_flex().items_center().gap(u(6)).child(heading(u, unitName(p), { size: 13 })).child(div().truncate().text_color(C.textDim).child(tabLabel(tab) ? `“${tabLabel(tab)}”` : "")))
           .child(div().truncate().text_size(u(12)).text_color(C.text).child(where || "—"))
           .when(Boolean(status), (el) =>
             el.child(
@@ -161,6 +165,7 @@ export default class Selection {
   }
 
   render(_cx) {
+    this.now = Date.now();
     const u = unit();
     const f = focused();
     const p = f?.pane ? panes().find((x) => x.pane === f.pane) : null;

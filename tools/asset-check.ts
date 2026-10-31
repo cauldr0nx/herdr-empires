@@ -1,8 +1,10 @@
 // tools/asset-check.ts: the provenance guard (SPEC §11.3, §13.3).
 // Every non-JS file under mods/empires/ needs an entry in
 // mods/empires/assets.manifest.json with an allow-listed license; CC-BY-SA-3.0
-// is allowed only under mods/empires/assets-cc-by-sa/. Entries for files that
-// no longer exist fail too (stale provenance is wrong provenance).
+// is allowed only under mods/empires/assets-cc-by-sa/ and inside an art pack
+// (mods/empires/packs/<name>/, SPEC §18.4), whose files are covered by that pack's
+// own pack.manifest.json and which must carry its own LICENSE. Entries for files
+// that no longer exist fail too (stale provenance is wrong provenance).
 //
 //   bun tools/asset-check.ts [--write]   (--write: add generated files from art/manifest-generated.json)
 
@@ -45,7 +47,27 @@ if (write) {
 
 const errors: string[] = [];
 const all = files(modDir).filter((f) => !f.endsWith(".js") && !EXEMPT.has(f.split("/").pop()!));
+// Art packs: packs/<name>/pack.manifest.json { _about, files: { "<path in pack>": entry } }.
+const packs: Record<string, Record<string, any>> = {};
 for (const f of all) {
+  const m = /^packs\/([^/]+)\//.exec(f);
+  if (!m || packs[m[1]]) continue;
+  const pm = join(modDir, "packs", m[1], "pack.manifest.json");
+  packs[m[1]] = existsSync(pm) ? JSON.parse(readFileSync(pm, "utf8")).files ?? {} : {};
+  if (!existsSync(join(modDir, "packs", m[1], "LICENSE"))) errors.push(`packs/${m[1]}/: an art pack needs its own LICENSE`);
+  if (!existsSync(pm)) errors.push(`packs/${m[1]}/: an art pack needs pack.manifest.json`);
+}
+const PACK_META = new Set(["pack.json", "pack.manifest.json", "LICENSE", "README.md"]);
+for (const f of all) {
+  const pk = /^packs\/([^/]+)\/(.+)$/.exec(f);
+  if (pk) {
+    if (PACK_META.has(pk[2])) continue;
+    const e = packs[pk[1]]?.[pk[2]];
+    if (!e) { errors.push(`${f}: no entry in packs/${pk[1]}/pack.manifest.json`); continue; }
+    if (e.license !== SA && !ALLOW.has(e.license)) errors.push(`${f}: license "${e.license}" not allowed in a pack`);
+    if (!e.author || !(e.url || e.generator)) errors.push(`${f}: pack files need an author and a url or generator`);
+    continue;
+  }
   const e = manifest[f];
   if (!e) { errors.push(`${f}: no manifest entry`); continue; }
   for (const k of ["source", "license"]) if (typeof e[k] !== "string" || !e[k]) errors.push(`${f}: manifest entry needs "${k}"`);
@@ -57,6 +79,7 @@ for (const f of all) {
   if (f.startsWith("assets-cc-by-sa/") && !existsSync(join(modDir, "assets-cc-by-sa", "LICENSE"))) errors.push(`${f}: assets-cc-by-sa/ needs its own LICENSE`);
 }
 for (const f of Object.keys(manifest)) if (!existsSync(join(modDir, f))) errors.push(`${f}: manifest entry for a file that does not exist`);
+for (const [name, entries] of Object.entries(packs)) for (const f of Object.keys(entries)) if (!existsSync(join(modDir, "packs", name, f))) errors.push(`packs/${name}/${f}: pack manifest entry for a file that does not exist`);
 
 if (errors.length) {
   for (const e of errors) console.error(`asset-check: ${e}`);

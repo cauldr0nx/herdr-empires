@@ -42,7 +42,7 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
     body += `<ellipse cx="${cx}" cy="${cy}" rx="${r2(3 + r() * 3)}" ry="${r2(2 + r() * 2)}" fill="#2e1f12" fill-opacity="0.6"/>`;
   }
   body += `<rect width="256" height="1" fill="#9a6a3c" fill-opacity="0.7"/><rect y="63" width="256" height="1" fill="#1a1109"/>`;
-  out("mods/empires/img/wood.svg", svgTag(256, 64, body, ' preserveAspectRatio="none"'));
+  out("mods/empires/img/plank.svg", svgTag(256, 64, body, ' preserveAspectRatio="none"'));
 }
 // Parchment 256×256: warm paper with faint blotches and fibres.
 {

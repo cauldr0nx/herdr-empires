@@ -3,15 +3,19 @@
 A medieval real-time-strategy theme for the [Herdr](https://herdr.dev) desktop
 app. Agents become **units**, spaces become **towns**, tabs become
 **buildings**, and the window becomes an RTS HUD: a resource bar that counts
-real things, a command card, a selected-unit panel and a diamond minimap. A
-herald brings news from the front. Everything maps to a real Herdr command,
-and nothing from any commercial game ships here (SPEC §13).
+real things, a command card, a selected-unit panel and a diamond minimap. Above
+the terminals, **the world**: an isometric map where each space is a town and
+each agent a villager who walks out to gather, rings the alarm when it needs
+you, and comes home when its task is done. A herald brings news from the front.
+Everything maps to a real Herdr command, and nothing from any commercial game
+ships here (SPEC §13). The world's art is rendered from **0 A.D.** models
+(Wildfire Games, CC BY-SA 3.0); see `CREDITS.md`.
 
 ![Herdr Empires](preview.png)
 
-> `preview.png` is currently a rendered mock of the layout, not a screenshot:
-> the build environment could not run Herdr (see `SPIKES.md` R6). Replace it
-> with `herdr-app shot` from a clean demo profile before publishing.
+> `preview.png` is a real `herdr-app shot` of the Map view, taken by
+> `tools/demo/run-demo.sh` in a private demo (its own app home and herdr-core,
+> fake agents, generic names), with the shipped 0 A.D. pack.
 
 ## Install
 
@@ -37,10 +41,35 @@ overwrite any file of the same name that it did not install.
 | Remove | `tools/install.sh uninstall` |
 | Panic | `ctrl-alt-shift-escape` (Herdr's unbindable reset) |
 
+## The world (SPEC §18)
+
+- **Views** (`alt-w`, the corner buttons, or Menu → View): **Split** (the world
+  over the terminals), **Map** (the world only), **Terminals** (no world).
+- **Units**: working agents walk between their tab's building and a resource
+  and gather there; blocked agents wait at the town center under a red alert;
+  finished ones wear a check until you look; idle ones stand about. Click a unit
+  to focus its terminal, double-click to open it (from Map view), click a town
+  center for its space, a building for its tab.
+- **Options → World**: view, art pack, world zoom, and **Animate units** (off:
+  a still world that redraws only on change; calm mode implies it).
+
+### Art packs
+
+The world reads all of its art through a pack (`pack.json`, SPEC §18.4):
+
+| Pack | Where | What |
+|---|---|---|
+| **0 A.D.** (shipped) | `mods/empires/packs/zeroad/` | Rendered from 0 A.D. models by `art/zeroad/` (CC BY-SA 3.0, Wildfire Games) |
+| **Local import** (optional) | `<app home>/empires-packs/local/` | Built on *your* machine from a game install *you* own, by `tools/install.sh import-local [--source DIR]`. Never shipped, never committed, never used for public screenshots. |
+
+Options → Art pack: **Auto** (a local import if present, else 0 A.D.), **0 A.D.**,
+or **Local import**. `tools/install.sh uninstall --purge` also removes local packs.
+
 ## Keys (`layout:empires`)
 
 | Key | Action |
 |---|---|
+| `alt-w` | cycle the world view (split / map / terminals) |
 | `alt-.` | next idle or finished unit |
 | `alt-,` | next unit under attack (blocked) |
 | `alt-m` | game menu |

@@ -37,12 +37,25 @@
     },
     {
       "id": "field",
-      "type": "row",
+      "type": "column",
       "padding": [
         8,
         8
       ],
       "children": [
+        {
+          "id": "world",
+          "type": "block",
+          "size": {
+            "weight": 35
+          },
+          "content": {
+            "mod": "empires",
+            "props": {
+              "role": "world"
+            }
+          }
+        },
         {
           "id": "main",
           "type": "block",
@@ -73,6 +86,9 @@
                 "reveal": "always"
               }
             }
+          },
+          "size": {
+            "weight": 65
           }
         }
       ],
@@ -85,10 +101,12 @@
               "role": "herald"
             }
           },
-          "edge": "left",
-          "align": "end"
+          "edge": "right",
+          "align": "end",
+          "peek": 64
         }
-      ]
+      ],
+      "gap": 6
     },
     {
       "id": "hud",

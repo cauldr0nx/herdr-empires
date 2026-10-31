@@ -166,10 +166,10 @@ export default class Minimap {
         }, { h: 20, pad: [0, 5], disabled: !idle, tooltip: `${idle} idle or finished unit${idle === 1 ? "" : "s"}: click to cycle (Alt+.)` }),
       )
       .child(
-        button(u, "mm-alarm", h_flex().items_center().gap(u(3)).child(glyph(u, "swords", 12, blocked ? C.blocked : C.text)).child(div().text_color(blocked ? C.blocked : C.text).child(`${blocked}`)), () => {
+        button(u, "mm-alarm", h_flex().items_center().gap(u(3)).child(glyph(u, "swords", 12, blocked ? "#fff6e8" : C.text)).child(div().font_weight(700).text_color(blocked ? "#fff6e8" : C.text).child(`${blocked}`)), () => {
           const a = nextBlocked(list, order, f?.agent ?? f?.terminal ?? null);
           if (a) run("agent.focus", { terminal: a.address });
-        }, { h: 20, pad: [0, 5], disabled: !blocked, tooltip: `${blocked} unit${blocked === 1 ? "" : "s"} under attack (waiting for you): click to go to the next (Alt+,)` }),
+        }, { h: 20, pad: [0, 5], disabled: !blocked, bg: blocked ? C.blocked : undefined, tooltip: `${blocked} unit${blocked === 1 ? "" : "s"} under attack (waiting for you): click to go to the next (Alt+,)` }),
       );
     return root(u, div().id("minimap").size_full().flex().flex_col()).child(
       stone(u, v_flex().size_full().items_center().justify_between().py(u(4)).child(map).child(bar), { kind: "panel" }),

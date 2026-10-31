@@ -6,12 +6,13 @@
 
 import { div, image } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { spaces, agents, terminals, focused, run, shared, setShared, nextCommand, settings, window as appWindow, exec } from "herdr";
+import { spaces, agents, terminals, focused, run, shared, setShared, nextCommand, settings, window as appWindow, exec, readTextFile, appHome } from "herdr";
 import { C, ASSETS, FONT_SC, unit, root, plank, heading, button, own, fitLayout, openMenu, openDialog, sfx, glyph, calm, label } from "../kit.js";
 import { clock, resourceCounts, ageFor, transitions, completions, orderAgents, nextIdle, nextBlocked, isNarrow, pruneGroups, selectedUnits } from "../data.js";
 import { onIdle, commandMode } from "./queue.js";
+import { cycleView, setView, viewMode } from "./views.js";
 
-const RESOURCE_ICON = { food: "food", wood: "wood", gold: "gold", stone: "stone", population: "population" };
+const RESOURCE_ICON = { food: "food", wood: "res-wood", gold: "gold", stone: "stone", population: "population" };
 const CHRONICLE_MAX = 500;
 
 /** Seconds since the Herdr app started (exec's parent), or null where ps can't say. */
@@ -29,6 +30,8 @@ async function appAge() {
 
 export default class Resources {
   init(_p, cx) {
+    this.packUi = null; // resource icons from the art pack (SPEC §18.4 ui), when it has them
+    this.loadPackUi(cx);
     this.zoom = null;
     this.scale = null;
     this.width = 0;
@@ -114,6 +117,12 @@ export default class Resources {
         return this.boot(true);
       case "options":
         return openDialog("options", { title: "Options" });
+      case "view":
+        return cycleView();
+      case "view_split":
+      case "view_map":
+      case "view_terminals":
+        return setView(c.slice(5));
     }
     // Control groups (SPEC §14.4): ctrl-shift-<digit> assigns the selection, alt-shift-<digit> selects it.
     const set = /^group_set_(\d)$/.exec(c);
@@ -145,6 +154,7 @@ export default class Resources {
       { label: "&Tech tree (keys)", icon: "techtree", shortcut: "F1", act: { dialog: { kind: "techtree", title: "Tech tree" } } },
       { label: "&Chronicle", icon: "chronicle", act: { dialog: { kind: "chronicle", title: "Chronicle" } } },
       { sep: true },
+      { label: "&View", icon: "expand", sub: [["split", "&Split: world over terminals"], ["map", "&Map: the world only"], ["terminals", "&Terminals: no world"]].map(([m, l]) => ({ label: l, radio: true, checked: viewMode() === m, shortcut: m === "split" ? "Alt+W" : undefined, act: { run: [`empires.view_${m}`, {}] } })) },
       { label: hudHidden ? "Show &HUD" : "Hide &HUD", icon: "expand", shortcut: "Ctrl+Shift+H", act: { shared: ["empires.hud", hudHidden ? "shown" : "hidden"], run: ["layout.toggle", { id: "hud" }] } },
       { label: "&Mute sounds", icon: "mute", checked: shared("empires.mute") === true, act: { shared: ["empires.mute", shared("empires.mute") !== true] } },
       { label: "Summon the &herald", icon: "herald", checked: shared("empires.herald") !== "off", act: { shared: ["empires.herald", shared("empires.herald") === "off" ? "on" : "off"] } },
@@ -202,13 +212,41 @@ export default class Resources {
     });
   }
 
+  // ---- the art pack's painted resource icons
+
+  loadPackUi(cx) {
+    const choice = shared("empires.pack") ?? "auto";
+    const bases = choice === "zeroad" ? [`${ASSETS}/packs/zeroad`] : ["empires-packs/local", `${ASSETS}/packs/zeroad`];
+    cx.spawn(async (cx) => {
+      for (const base of bases) {
+        try {
+          const text = await readTextFile(`${appHome()}/${base}/pack.json`);
+          if (!text) continue;
+          const pack = JSON.parse(text);
+          const ui = pack.ui ?? {};
+          const icons = {};
+          for (const [key, name] of [["food", "food"], ["wood", "wood"], ["stone", "stone"], ["population", "population"], ["gold", "gold"]]) {
+            // 0 A.D.'s fourth resource is metal (an anvil), which doesn't read as gold: keep the coin.
+            if (key === "gold" && pack.name === "zeroad") continue;
+            if (ui[name]) icons[key] = `${base}/${ui[name]}`;
+          }
+          this.packUi = { choice, icons };
+          cx.notify();
+          return;
+        } catch {}
+      }
+      this.packUi = { choice, icons: {} };
+    });
+  }
+
   // ---- pieces
 
   counter(u, key, r, o = {}) {
     const narrow = o.narrow;
     const pulse = key === "stone" && r.value > 0 && !calm();
-    let num = div().font_family(FONT_SC).text_size(u(14)).text_color(pulse ? C.blocked : C.text).child(key === "population" ? `${r.value}/${r.cap}` : String(r.value));
-    if (pulse) num = num.loop("opacity", { from: 0.45, to: 1, period: 900 });
+    let num = div().font_family(FONT_SC).text_size(u(14)).text_color(C.text).child(key === "population" ? `${r.value}/${r.cap}` : String(r.value));
+    // Under attack: a light number on a red pill; the pill pulses, the number stays readable.
+    if (pulse) num = div().relative().px(u(5)).rounded(u(7)).child(div().absolute().top(0).left(0).size_full().rounded(u(7)).bg(C.blocked).loop("opacity", { from: 0.55, to: 1, period: 900 })).child(num.relative().text_color("#fff6e8").font_weight(700));
     const act = () => {
       if (key === "stone") {
         const a = nextBlocked(agents(), this.order(), null);
@@ -233,7 +271,7 @@ export default class Resources {
         .hover((s) => s.bg("#ffffff14"))
         .tooltip(tip)
         .on_click(() => act())
-        .child(image(`${ASSETS}/img/${RESOURCE_ICON[key]}.svg`).flex_none().w(u(20)).h(u(20)))
+        .child(image(this.packUi?.icons?.[key] ?? `${ASSETS}/img/${RESOURCE_ICON[key]}.svg`).flex_none().w(u(20)).h(u(20)))
         .child(num)
         .when(!narrow, (el) => el.child(div().text_size(u(10.5)).text_color(C.textDim).child(key))),
     );
@@ -293,6 +331,7 @@ export default class Resources {
   }
 
   render(cx) {
+    if (this.packUi && this.packUi.choice !== (shared("empires.pack") ?? "auto")) this.loadPackUi(cx);
     const u = unit();
     const z = settings()?.zoom;
     const sc = shared("empires.scale");

@@ -37,6 +37,14 @@ gpui-kit.d.ts
 jsconfig.json
 .empires-home/
 
+# Locally imported game art (SPEC §18.6): never committed
+empires-packs/
+*.smx
+*.sld
+*.slp
+*.drs
+*.dds
+
 # Raw downloads, contact sheets, scratch screenshots
 art/sources/
 art/out/

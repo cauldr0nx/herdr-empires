@@ -2,7 +2,7 @@
   "fonts/AlegreyaSans-Bold.ttf": {
     "source": "google-fonts",
     "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasans",
-    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipogr\u00e1fica)",
     "license": "OFL-1.1",
     "modified": false,
     "notes": "OFL-AlegreyaSans.txt"
@@ -10,7 +10,7 @@
   "fonts/AlegreyaSans-Italic.ttf": {
     "source": "google-fonts",
     "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasans",
-    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipogr\u00e1fica)",
     "license": "OFL-1.1",
     "modified": false,
     "notes": "OFL-AlegreyaSans.txt"
@@ -18,7 +18,7 @@
   "fonts/AlegreyaSans-Medium.ttf": {
     "source": "google-fonts",
     "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasans",
-    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipogr\u00e1fica)",
     "license": "OFL-1.1",
     "modified": false,
     "notes": "OFL-AlegreyaSans.txt"
@@ -26,7 +26,7 @@
   "fonts/AlegreyaSans-Regular.ttf": {
     "source": "google-fonts",
     "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasans",
-    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipogr\u00e1fica)",
     "license": "OFL-1.1",
     "modified": false,
     "notes": "OFL-AlegreyaSans.txt"
@@ -34,7 +34,7 @@
   "fonts/AlegreyaSansSC-Bold.ttf": {
     "source": "google-fonts",
     "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasanssc",
-    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipogr\u00e1fica)",
     "license": "OFL-1.1",
     "modified": false,
     "notes": "OFL-AlegreyaSansSC.txt"
@@ -42,7 +42,7 @@
   "fonts/AlegreyaSansSC-Regular.ttf": {
     "source": "google-fonts",
     "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasanssc",
-    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipogr\u00e1fica)",
     "license": "OFL-1.1",
     "modified": false,
     "notes": "OFL-AlegreyaSansSC.txt"
@@ -663,6 +663,15 @@
     "modified": false,
     "notes": ""
   },
+  "img/plank.svg": {
+    "source": "generated",
+    "generator": "art/textures.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
   "img/population.svg": {
     "source": "generated",
     "generator": "art/generate.ts",
@@ -671,6 +680,15 @@
     "license": "Apache-2.0",
     "modified": false,
     "notes": ""
+  },
+  "img/res-wood.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": "resource icon (log)"
   },
   "img/resign.svg": {
     "source": "generated",
@@ -727,15 +745,6 @@
     "notes": ""
   },
   "img/victory.svg": {
-    "source": "generated",
-    "generator": "art/textures.ts",
-    "url": null,
-    "author": null,
-    "license": "Apache-2.0",
-    "modified": false,
-    "notes": ""
-  },
-  "img/wood.svg": {
     "source": "generated",
     "generator": "art/textures.ts",
     "url": null,

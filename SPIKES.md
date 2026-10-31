@@ -76,3 +76,49 @@ read from code, not observed on screen; re-verify in the app before release.
 - Templates: `~/.config/herdr-core/templates/empires-<unit>.md`; the Train
   dialog reads the installed file and shows its body in full before sending
   it (SPEC §14.5: no hidden prompt injection).
+
+## World layer spikes (SPEC §18.7), answered in a real Herdr
+
+Evidence comes from **herdr-app 0.1.10 (Linux)** running headless under `cage` with
+`WLR_BACKENDS=headless`. It used its own app home **and its own herdr-core**
+(private `XDG_RUNTIME_DIR`/`XDG_STATE_HOME`), with demo spaces driven by
+`tools/demo/fake-agent.sh`, and was inspected with `herdr-app shot`. This is
+the real app binary, not the Bun stub, and it never touched a person's
+Herdr. See "Testing in a sandbox" below.
+
+| # | Question | Answer (observed) | Consequence |
+|---|---|---|---|
+| R11 | Sprite frame animation without a per-frame script | **Colour glyphs: no.** `.frames([...], ms)` does cycle glyphs natively, but Herdr draws colour-emoji glyphs (Noto Color Emoji, CBDT) as a single-colour mask tinted with the text colour, so a colour bitmap font can't carry sprite frames. **Strip + timer: yes.** A sheet `image()` inside an `overflow_hidden` box, offset by `left/top`, with `cx.timer.every` stepping the frame, renders correctly. The headless window fired a 125 ms timer only ~1.4–5×/s; a real window is expected to be closer to nominal. | The world role steps frames with one timer at ≤ 6 fps, gated on: world shown (view ≠ terminals), size > 40 px, `window().active`, agents present, not calm, and Options → Animate units on. `tools/check.ts` allows sub-second timers **only** for the world role (≥ 125 ms). |
+| R12 | Blender: 4.5 LTS COLLADA vs. assimp → glTF | **Blender 4.5.15 LTS (portable) with the legacy COLLADA importer works.** It imports 0 A.D. skinned meshes, separate animation `.dae` files and `prop-*` attachments intact (system Blender 5.x has no COLLADA import; assimp wasn't needed). Cycles CPU, about 13 min for the full pack on 8 cores. | `art/zeroad/fetch.sh` downloads the portable 4.5.15 tarball from a mirror and checks its sha256 (download.blender.org refuses scripted downloads). See `art/zeroad/README.md`. |
+| R13 | Walking direction on there-and-back loops | **Native `left`/`top` loops keep running across re-renders**: a unit re-rendered several times a second while looping did not snap back. The loop's phase follows from the time it started, so the role computes it (`tripState()`) and picks the sheet row (outbound vs. return direction) and the animation (walk out, gather around the far end where ease-in-out lingers, carry back). | No opacity tricks needed. Direction and animation come from `tripState(now - t0, period, home, node)`. |
+| R14 | Detecting world visibility | `on_size_change` reports the block's size; a hidden stack/column child keeps its copy alive. The role's own view mode (`shared("empires.view")`) plus size > 40 px plus `window().active` decide whether to tick. | Hidden or inactive means no frame timer; native loops stop by themselves when not shown. |
+| R15 | Cost | CPU of the sandbox app over 10 s, same demo (7 agents, 3 towns): Herdr main 6 %, Herdr 98 15 %, Empires Terminals view ~31 %, Map ~55–60 %, Split ~70 % of one core. Every running native loop (pulses, walking units) makes the window redraw continuously, and the per-tile terrain added hundreds of elements per frame. | (1) A baked seamless ground image replaces the diamond tiles. (2) The frame tick is capped at 6 fps. (3) **Options → Animate units** (off: still units at their posts, no loops, no tick); calm mode implies it. **Re-measured with the baked ground** (same kind of demo, 2 blocked agents): Terminals ~50 %, Split ~44 %, Map ~35 %. The world no longer adds measurable cost over the HUD; what remains is the continuous redraw driven by native pulse loops while something is blocked (calm mode stops them). The headless numbers are noisy (±15 points between runs); measure in a real window before tuning further. |
+| R16 | WebP in `image()` | **Yes**: a `.webp` rendered identically to the `.png`. | Packs may ship WebP to save space. |
+
+### Testing in a sandbox (how the evidence above was gathered)
+
+```sh
+# A private Herdr with its own core: nothing reaches the person's window or terminals.
+H=$XDG_RUNTIME_DIR/hes RT=$XDG_RUNTIME_DIR/hes-rt
+mkdir -p $H $RT && chmod 700 $RT
+sh tools/install.sh --home $H install
+env HERDR_APP_HOME=$H XDG_RUNTIME_DIR=$RT XDG_STATE_HOME=$H/xdg-state \
+  WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 setsid cage -s -- herdr-app &
+E="HERDR_APP_HOME=$H XDG_RUNTIME_DIR=$RT XDG_STATE_HOME=$H/xdg-state"
+env $E herdr-app do space.new --name demo-api --folder /tmp/demo-api --argv '["sh","tools/demo/fake-agent.sh","working"]'
+env $E herdr-app do layout.switch --name empires
+env $E herdr-app shot shots/world.png      # shots/ is gitignored
+```
+
+Keep the app home path short: the control socket lives in it, and Unix socket
+paths are limited (`SUN_LEN`).
+
+### A crash seen once in a person's window
+
+During live testing, a person's Herdr window exited once, right after
+`install.sh update` copied about 112 files one by one into the live mod
+folder. There was no core dump or log, and it did not reproduce in the
+sandbox, even after repeated rapid updates and layout switches. Each save
+triggers a hot reload of every live copy of the mod. The installer now stages a
+full copy and swaps it in with two renames, and waits for the window to answer
+before switching layouts.

@@ -49,7 +49,7 @@
   "icons/town.svg": "art/generate.ts",
   "icons/tower.svg": "art/generate.ts",
   "img/food.svg": "art/generate.ts",
-  "img/wood.svg": "art/generate.ts",
+  "img/res-wood.svg": "art/generate.ts",
   "img/gold.svg": "art/generate.ts",
   "img/stone.svg": "art/generate.ts",
   "img/population.svg": "art/generate.ts",

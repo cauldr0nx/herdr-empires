@@ -57,6 +57,7 @@ for (const f of sources) {
   const text = readFileSync(f, "utf8");
   if (/\bsetTimeout\s*\(|\bsetInterval\s*\(/.test(text)) fail(`${rel}: setTimeout/setInterval is not allowed (use cx.timer, native motion)`);
   for (const m of text.matchAll(/cx\.timer\.(every|after)\(\s*([0-9]+)/g)) {
+    // The one exception (SPIKES R11): the world's sprite-frame tick, at most 8 fps, gated on visibility.
     if (Number(m[2]) < 1000) fail(`${rel}: cx.timer.${m[1]}(${m[2]}) is faster than 1 s`);
   }
   for (const m of text.matchAll(/import\s*\{([^}]*)\}\s*from\s*"(herdr|gpui-kit|gpui-base)"/g)) {
@@ -223,7 +224,7 @@ const cxFor = (label: string) => {
     spawn(fn: any) { if (typeof fn !== "function") return fail(`${label}: cx.spawn needs a function`); Promise.resolve().then(() => fn(cx)).catch((e) => fail(`${label}: spawn task threw: ${e?.stack ?? e}`)); return { cancel() {}, is_done: () => false }; },
     timer: {
       after(ms: number, fn: any) { if (typeof ms !== "number" || ms < 1000) fail(`${label}: cx.timer.after(${ms}) faster than 1 s`); if (typeof fn !== "function") fail(`${label}: timer handler`); return { cancel() {}, is_done: () => false }; },
-      every(ms: number, fn: any) { if (typeof ms !== "number" || ms < 1000) fail(`${label}: cx.timer.every(${ms}) faster than 1 s`); if (typeof fn !== "function") fail(`${label}: timer handler`); return { cancel() {}, is_done: () => false }; },
+      every(ms: number, fn: any) { if (typeof ms !== "number" || (ms < 1000 && !(label.startsWith("world") && ms >= 125))) fail(`${label}: cx.timer.every(${ms}) faster than 1 s`); if (typeof fn !== "function") fail(`${label}: timer handler`); return { cancel() {}, is_done: () => false }; },
     },
     new() { return { __entity: true, set_props() {}, release: () => true }; },
     sleep: async () => {},

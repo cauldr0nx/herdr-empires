@@ -249,3 +249,93 @@ describe("phase 2: command layer", () => {
     expect(D.nameTargets(agents, ["x"])).toBe("x");
   });
 });
+
+describe("live-test fixes (SPEC §19)", () => {
+  test("completions count any arrival at done, and working -> idle", () => {
+    const c = (from, to) => ({ from, to });
+    expect(D.completions([c("blocked", "done")])).toBe(1);
+    expect(D.completions([c("idle", "done")])).toBe(1);
+    expect(D.completions([c("working", "done")])).toBe(1);
+    expect(D.completions([c("working", "idle")])).toBe(1);
+    expect(D.completions([c("done", "done"), c("done", "idle"), c("blocked", "idle"), c(null, "done")])).toBe(0);
+  });
+
+  test("an unnamed tab has no label on the unit card", () => {
+    expect(D.tabLabel({ name: "1", named: false })).toBe("");
+    expect(D.tabLabel({ name: "fix login", named: true })).toBe("fix login");
+    expect(D.tabLabel(null)).toBe("");
+  });
+
+  test("the location line drops repeats", () => {
+    expect(D.locationLine("api", "api", "main")).toBe("api · main");
+    expect(D.locationLine("town", "api", "main")).toBe("town · api · main");
+    expect(D.locationLine("api", "", null)).toBe("api");
+  });
+});
+
+describe("world model (SPEC §18.3)", () => {
+  const spaces = [
+    { id: "s1", name: "api", active: false, machine: null, tabs: [{ id: "t1", name: "1", status: "working" }, { id: "t2", name: "2", status: null }] },
+    { id: "s2", name: "web", active: true, machine: null, tabs: [{ id: "t3", name: "1", status: "blocked", settled: false }, { id: "t4", name: "2", settled: true }] },
+  ];
+  const agents = [
+    { address: "a1", space: "s1", tab: "t1", status: "working", program: { name: "Claude Code" } },
+    { address: "a2", space: "s2", tab: "t3", status: "blocked", program: { name: "Codex" } },
+    { address: "a3", space: "s2", tab: "t4", status: "idle", program: { name: "Pi" } },
+  ];
+
+  test("the active town sits at the origin; one building per tab; garrisoned units hidden", () => {
+    const w = D.worldModel({ spaces, agents, terminals: [] });
+    expect(w.towns[0].space).toBe("s2");
+    expect([w.towns[0].x, w.towns[0].y]).toEqual([0, 0]);
+    expect(w.towns.map((t) => t.buildings.length)).toEqual([2, 2]);
+    expect(w.units.map((u) => u.address).sort()).toEqual(["a1", "a2"]); // a3's tab is settled
+  });
+
+  test("layouts are stable across calls (seeded by ids)", () => {
+    const a = D.worldModel({ spaces, agents });
+    const b = D.worldModel({ spaces, agents });
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+  });
+
+  test("unit caps overflow into a count", () => {
+    const many = Array.from({ length: 70 }, (_, i) => ({ address: `x${i}`, space: "s2", tab: "t3", status: "working" }));
+    const w = D.worldModel({ spaces, agents: many, maxUnits: 60 });
+    expect(w.units.length).toBe(60);
+    expect(w.towns[0].hidden).toBe(10);
+  });
+
+  test("directions follow the screen", () => {
+    expect(D.dirFor(0, 10)).toBe("S");
+    expect(D.dirFor(10, 0)).toBe("E");
+    expect(D.dirFor(-10, 0)).toBe("W");
+    expect(D.dirFor(0, -10)).toBe("N");
+    expect(D.dirFor(-10, 10)).toBe("SW");
+    expect(D.dirRow("N", 8)).toBe(4);
+    expect(D.dirRow("N", 2)).toBe(1);
+    expect(D.dirRow("SE", 2)).toBe(0);
+  });
+
+  test("a trip walks out, gathers at the far end, carries back", () => {
+    const from = { x: 0, y: 0 }, to = { x: 100, y: 0 };
+    expect(D.tripState(1000, 10000, from, to).anim).toBe("walk");
+    expect(D.tripState(1000, 10000, from, to).dir).toBe("E");
+    expect(D.tripState(5000, 10000, from, to, "gold").anim).toBe("gather_gold");
+    expect(D.tripState(7500, 10000, from, to).anim).toBe("carry");
+    expect(D.tripState(7500, 10000, from, to).dir).toBe("W");
+  });
+
+  test("fallback chains resolve against a partial pack", () => {
+    expect(D.entityFallback({ house: {} }, "university")).toBe("house");
+    expect(D.entityFallback({}, "tree")).toBe(null);
+    expect(D.animFallback({ walk: {}, idle: {} }, "gather_stone")).toBe("walk");
+    expect(D.animFallback({ idle: {} }, "carry")).toBe(null);
+  });
+
+  test("views cycle", () => {
+    expect(D.nextView("split")).toBe("map");
+    expect(D.nextView("map")).toBe("terminals");
+    expect(D.nextView("terminals")).toBe("split");
+    expect(D.nextView(undefined)).toBe("map");
+  });
+});

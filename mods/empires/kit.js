@@ -373,7 +373,7 @@ export function openMenu(items, at, o = {}) {
   });
 }
 
-const DIALOG_W = { prompt: 360, confirm: 360, about: 420, options: 460, techtree: 520, chronicle: 520, train: 460, message: 360, send: 420, queue: 460 };
+const DIALOG_W = { prompt: 360, confirm: 360, about: 420, options: 500, techtree: 520, chronicle: 520, train: 460, message: 360, send: 420, queue: 460 };
 
 /** Opens a parchment dialog (the dialog role): kind and its props. Full-window screens use `screen`. */
 export function openDialog(kind, p = {}) {

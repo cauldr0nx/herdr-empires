@@ -58,15 +58,15 @@ export default class Herald {
         .child(image(`${ASSETS}/img/herald.svg`).w(u(56)).h(u(72))),
     );
     if (a && !calm()) portrait = portrait.loop("top", { from: 0, to: u(-4), period: 900 });
-    return root(
-      u,
-      v_flex()
-        .p(u(4))
-        .gap(u(3))
-        .map((el) => (right ? el.items_end() : el.items_start())),
-    )
-      .when(Boolean(bubble), (el) => el.child(bubble))
-      .child(portrait);
+    // A dot on the portrait says "news" while the drawer is closed (only the portrait peeks).
+    if (a) portrait = portrait.child(div().absolute().top(u(2)).left(u(2)).w(u(12)).h(u(12)).rounded_full().bg(a.status === "blocked" ? C.blocked : C.done).border(u(1)).border_color("#fff6e8"));
+    // On a side edge the herald is a peek drawer (SPEC §19.10): the portrait sits on the edge
+    // side and the bubble beside it, so a closed drawer shows only the portrait. One layout,
+    // never changed on hover (AGENTS.md: that keeps the drawer smooth).
+    const side = Boolean(placement()?.vertical);
+    const box = side ? h_flex().p(u(4)).gap(u(4)).items_end() : v_flex().p(u(4)).gap(u(3)).map((el) => (right ? el.items_end() : el.items_start()));
+    const parts = bubble ? (side && right ? [bubble, portrait] : side ? [portrait, bubble] : [bubble, portrait]) : [portrait];
+    return root(u, box).children(parts);
   }
 
   bubble(u, text, actions, accent) {

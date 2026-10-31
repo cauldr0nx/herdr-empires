@@ -11,8 +11,15 @@ import { C, unit, root, plank, control, label, programIcon, pennant, statusBar, 
 import { paneTitle, playerColor, elapsed, subAgents, isAgentPane } from "../data.js";
 
 export default class Banner {
-  init() {
+  init(_p, cx) {
     this.now = Date.now();
+    this.last = "";
+    // Data, not animation (SPEC §8 R4): every 5 s, redraw only when the elapsed time is
+    // showing (a working agent) or the title moved on (a new branch or folder).
+    cx?.timer?.every(5000, (cx) => {
+      const p = this.me();
+      if ((isAgentPane(p) && p.status === "working") || paneTitle(p, home()) !== this.last) cx.notify();
+    });
   }
 
   me() {
@@ -43,6 +50,7 @@ export default class Banner {
   }
 
   render(_cx) {
+    this.now = Date.now();
     const u = unit();
     const id = props()?.pane ?? null;
     const p = this.me();
@@ -55,6 +63,7 @@ export default class Banner {
     const workers = p?.terminal ? subAgents(terminals(), p.terminal).length : 0;
     const focusedPane = Boolean(p?.focused);
     const title = paneTitle(p, home());
+    this.last = title;
 
     const bar = h_flex()
       .id(`banner-${id ?? "none"}`)

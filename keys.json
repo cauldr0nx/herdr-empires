@@ -1,5 +1,6 @@
 {
   "layout:empires": {
+    "alt-w": "empires.view",
     "alt-.": "empires.idle",
     "alt-,": "empires.alarm",
     "alt-m": "empires.menu",

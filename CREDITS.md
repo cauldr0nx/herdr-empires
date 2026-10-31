@@ -15,6 +15,19 @@ Fetched unmodified from https://github.com/google/fonts (`ofl/cinzel`,
 `ofl/alegreyasans`, `ofl/alegreyasanssc`). JetBrains Mono (terminals) ships
 with Herdr itself.
 
+## World art: 0 A.D. (CC BY-SA 3.0)
+
+Everything under `mods/empires/packs/zeroad/` is a **derived work** of art
+from **0 A.D.** by **Wildfire Games** (https://www.wildfiregames.com/),
+licensed under **CC BY-SA 3.0** (https://creativecommons.org/licenses/by-sa/3.0/).
+Sprites, terrain and icons were rendered or converted from the game's models,
+textures and UI art by `art/zeroad/` at the commit recorded in
+`mods/empires/packs/zeroad/pack.json`. These derived files are released under
+the same license; the pack folder carries its own `LICENSE`, and
+`pack.manifest.json` lists every output file with its source files. Some 0 A.D.
+textures originate from CGTextures, which permitted their distribution under
+CC BY-SA as part of 0 A.D. Code in this repository stays Apache-2.0.
+
 ## Patterns
 
 The role router, drawing kit, `fitLayout()`, boot screen and generated-art
@@ -24,5 +37,7 @@ pipeline follow the "Herdr 98" layout shipped with the Herdr app
 ## Not used
 
 No files from any commercial game, no CC-NC or "free for personal use"
-material, no tier-D (CC BY-SA) assets. Program icons shown in unit portraits
+material. The only tier-D (CC BY-SA) material is the 0 A.D. pack above, kept in
+its own folder. The optional local import (`tools/aoe2de-import/`) contains
+code only; what it builds stays on the user's machine. Program icons shown in unit portraits
 come from the person's own Herdr install (`icons/`), not from this repository.

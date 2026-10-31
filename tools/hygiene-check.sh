@@ -20,9 +20,9 @@ fi
 say() { echo "hygiene: $*" >&2; fail=1; }
 
 # 1. Never-commit paths.
-echo "$files" | grep -E '(^|/)(\.claude/|shared\.json$|view\.json$|session\.json$|window\.json$|windows\.json$|installed\.json$|seen\.json$|telemetry/|data/|layouts/\.state/|art/sources/|shots/|CLAUDE\.local\.md$|\.hygiene-local$|AGENTS\.md$|herdr\.d\.ts$|gpui-kit\.d\.ts$)|\.(jsonl|log|sock|error)$|\.(reset|bak|old|corrupt)-' \
+echo "$files" | grep -E '(^|/)(\.claude/|shared\.json$|view\.json$|session\.json$|window\.json$|windows\.json$|installed\.json$|seen\.json$|telemetry/|data/|layouts/\.state/|art/sources/|shots/|CLAUDE\.local\.md$|\.hygiene-local$|AGENTS\.md$|herdr\.d\.ts$|gpui-kit\.d\.ts$)|\.(jsonl|log|sock|error)$|\.(reset|bak|old|corrupt)-|\.([Ss][Mm][Xx]|[Ss][Ll][Dd]|[Ss][Ll][Pp]|[Dd][Rr][Ss]|[Dd][Dd][Ss])$|(^|/)empires-packs/' \
   | while read -r f; do say "never-commit path tracked: $f"; done
-[ -n "$(echo "$files" | grep -E '(^|/)(\.claude/|shared\.json$|view\.json$|session\.json$|window\.json$|windows\.json$|installed\.json$|seen\.json$|telemetry/|data/|layouts/\.state/|art/sources/|shots/|CLAUDE\.local\.md$|\.hygiene-local$|AGENTS\.md$|herdr\.d\.ts$|gpui-kit\.d\.ts$)|\.(jsonl|log|sock|error)$|\.(reset|bak|old|corrupt)-')" ] && fail=1
+[ -n "$(echo "$files" | grep -E '(^|/)(\.claude/|shared\.json$|view\.json$|session\.json$|window\.json$|windows\.json$|installed\.json$|seen\.json$|telemetry/|data/|layouts/\.state/|art/sources/|shots/|CLAUDE\.local\.md$|\.hygiene-local$|AGENTS\.md$|herdr\.d\.ts$|gpui-kit\.d\.ts$)|\.(jsonl|log|sock|error)$|\.(reset|bak|old|corrupt)-|\.([Ss][Mm][Xx]|[Ss][Ll][Dd]|[Ss][Ll][Pp]|[Dd][Rr][Ss]|[Dd][Dd][Ss])$|(^|/)empires-packs/')" ] && fail=1
 
 # 2. Size: nothing over 2 MB.
 for f in $files; do
@@ -60,7 +60,7 @@ scan "IPv4 address" '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' '(hygiene-check\.sh|0\.0\.
 scan "private key" '-----BEGIN [A-Z ]*PRIVATE KEY-----' 'hygiene-check\.sh'
 scan "token" '(ghp_[A-Za-z0-9]{20,}|gho_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35})' 'hygiene-check\.sh'
 # Product strings must not name commercial games or their publishers (SPEC §1, §13).
-scan "trademark" '(Age of Empires|AoE[2-4 ]|Ensemble Studios|Forgotten Empires|wololo)' '(SPEC\.md|hygiene-check\.sh|SPIKES\.md|tools/check\.ts)'
+scan "trademark" '(Age of Empires|AoE[2-4 ]|Ensemble Studios|Forgotten Empires|wololo)' '(SPEC\.md|hygiene-check\.sh|SPIKES\.md|tools/check\.ts|tools/aoe2de-import/|tests/aoe2de/)'
 # Developer-local deny-list: one regex per line in .hygiene-local (gitignored).
 if [ -f .hygiene-local ]; then
   while IFS= read -r pat; do

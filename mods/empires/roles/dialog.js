@@ -17,6 +17,7 @@ import { props, closeOverlay, run, shared, setShared, keys, spaces, agents, know
 import { C, ASSETS, DISPLAY, FONT_SC, VERSION, unit, root, parchment, plank, heading, button, label, glyph, own, perform, sfx, statusBadge, calm, programIcon, etch } from "../kit.js";
 import { techTree, scoreboard, ageFor, AGES, DEFAULT_AGE_THRESHOLDS, RESOURCE_SOURCES, DEFAULT_RESOURCES, DEFAULT_POPCAP, elapsed, UNIT_TYPES, autoKey } from "../data.js";
 import { queueOf, addToQueue, removeFromQueue, sendTo, commandMode } from "./queue.js";
+import { viewMode, setView } from "./views.js";
 
 const TIPS = [
   "Alt+. jumps to the next idle unit; Alt+, to the next one under attack.",
@@ -413,11 +414,12 @@ export default class Dialog {
     const cols = tree.map((g) =>
       v_flex()
         .flex_none()
-        .w(u(150))
+        .w(u(232))
         .gap(u(2))
+        .pb(u(8))
         .child(heading(u, g.name, { size: 11, color: C.ink }))
         .children(
-          g.items.slice(0, 14).map((it) =>
+          g.items.map((it) =>
             h_flex()
               .gap(u(6))
               .items_center()
@@ -426,7 +428,7 @@ export default class Dialog {
           ),
         ),
     );
-    return this.frame(u, "Tech tree: the keys of the realm", v_flex().gap(u(8)).child(div().text_color(C.inkMuted).child("Every technology is a key binding from keys.json (global and layout:empires). Research them in Herdr's keys.json.")).child(h_flex().gap(u(10)).items_start().overflow_x_scroll().children(cols)).child(this.buttons(u, [this.btn(u, "ok", "Close", () => this.close(), { default: true })])));
+    return this.frame(u, "Tech tree: the keys of the realm", v_flex().gap(u(8)).child(div().text_color(C.inkMuted).child("Every technology is a key binding from keys.json (global and layout:empires). Research them in Herdr's keys.json.")).child(div().id("techtree-scroll").max_h(u(400)).overflow_y_scrollbar().child(h_flex().flex_wrap().gap(u(10)).items_start().children(cols))).child(this.buttons(u, [this.btn(u, "ok", "Close", () => this.close(), { default: true })])));
   }
 
   renderChronicle(u) {
@@ -691,6 +693,12 @@ export default class Dialog {
       .child(heading(u, "Sound", { size: 11, color: C.ink }))
       .child(this.check(u, "mute", "Mute Empires sounds", shared("empires.mute") === true, () => setShared("empires.mute", shared("empires.mute") !== true), "UI clicks, horns and bells from this theme. Herdr's own alert sounds are separate."))
       .child(this.check(u, "alerts", "Use Empires alert sounds (writes settings.json sounds.done/blocked)", alerts, () => this.setAlertSounds(!alerts).catch((e) => console.log(`empires: alert sounds: ${e}`)), "Replaces Herdr's attention sounds with the town bell and the brass two-note; un-check restores the previous ones."))
+      .child(div().h(u(1)).w_full().bg(C.parchmentEdge))
+      .child(heading(u, "World", { size: 11, color: C.ink }))
+      .child(this.cycle(u, "view", "View", { split: "Split", map: "Map", terminals: "Terminals" }[viewMode()], ["Split", "Map", "Terminals"], (v) => setView(v.toLowerCase()), "Alt+W cycles: the world over the terminals, the world only, or no world"))
+      .child(this.cycle(u, "pack", "Art pack", { auto: "Auto", zeroad: "0 A.D.", local: "Local import" }[shared("empires.pack") ?? "auto"] ?? "Auto", ["Auto", "0 A.D.", "Local import"], (v) => setShared("empires.pack", { Auto: "auto", "0 A.D.": "zeroad", "Local import": "local" }[v]), "Auto uses a local import when present, else the shipped 0 A.D. pack. Build a local pack from your own game install with: tools/install.sh import-local"))
+      .child(this.check(u, "animate", "Animate units (walking, gathering)", shared("empires.animate") !== false, () => setShared("empires.animate", shared("empires.animate") === false), "Off: units stand at their posts and the world draws once per change. Saves battery on long days."))
+      .child(this.cycle(u, "wzoom", "World zoom", `${Number(shared("empires.worldZoom")) || 1}×`, ["0.75×", "1×", "1.25×", "1.5×"], (v) => setShared("empires.worldZoom", parseFloat(v))))
       .child(div().h(u(1)).w_full().bg(C.parchmentEdge))
       .child(heading(u, "Look", { size: 11, color: C.ink }))
       .child(this.cycle(u, "scale", "HUD scale", scale, ["1×", "2×"], (v) => setShared("empires.scale", v === "2×" ? 2 : 1), "2× doubles every HUD pixel (high-DPI or large screens)"))
