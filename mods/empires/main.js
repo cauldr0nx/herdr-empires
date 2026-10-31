@@ -9,6 +9,7 @@
 //   menu       a parchment popup menu
 //   dialog     every dialog (prompt, confirm, options, techtree, chronicle, about, screens)
 //   world      the isometric map: spaces as towns, agents as units (SPEC §18)
+//   chatbar    the title bar of a unit's chat popup (its live terminal)
 // `herdr-app check` loads the mod with props() = null: render a placeholder then.
 
 import { View, div } from "gpui-kit";
@@ -22,8 +23,9 @@ import Herald from "./roles/herald.js";
 import Menu from "./roles/menu.js";
 import Dialog from "./roles/dialog.js";
 import World from "./roles/world.js";
+import ChatBar from "./roles/chat.js";
 
-const ROLES = { resources: Resources, banner: Banner, command: Command, selection: Selection, minimap: Minimap, herald: Herald, menu: Menu, dialog: Dialog, world: World };
+const ROLES = { resources: Resources, banner: Banner, command: Command, selection: Selection, minimap: Minimap, herald: Herald, menu: Menu, dialog: Dialog, world: World, chatbar: ChatBar };
 
 export default class Empires extends View {
   init(p, cx) {

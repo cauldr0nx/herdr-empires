@@ -16,6 +16,7 @@ import { spaces, agents, terminals, shared, setShared, run, readTextFile, appHom
 import { C, FONT_SC, DISPLAY, ASSETS, unit, root, own, calm, glyph } from "../kit.js";
 import { worldModel, tripState, dirRow, animFallback, entityFallback, hashStr, seeded } from "../data.js";
 import { setView, viewMode } from "./views.js";
+import { openUnitChat } from "./chat.js";
 
 const SHIPPED = `${ASSETS}/packs/zeroad`;
 const LOCAL = "empires-packs/local";
@@ -43,6 +44,11 @@ export default class World {
     this.packChoice = null;
     this.size = null;
     this.t0 = {};
+    this.pan = { x: 0, y: 0 }; // camera offset from the active town, screen px (drag to move)
+    this.drag = null;
+    this.dragEnd = 0;
+    this.wheel = 1; // scroll-wheel zoom, on top of Options → World zoom
+    this.activeSpace = null;
     this.reload(cx);
     cx.timer.every(1000 / FPS_CAP, (cx) => {
       if (shared("empires.pack") !== this.packChoice) this.reload(cx);
@@ -146,10 +152,10 @@ export default class World {
       .id(`unit-${key}`)
       .absolute()
       .cursor_pointer()
-      .tooltip(`${un.name}: ${un.status === "working" ? `gathering ${un.resource}` : un.status === "blocked" ? "under attack: needs you" : un.status === "done" ? "task complete" : "idle"}${un.workers ? ` · ${un.workers} worker${un.workers === 1 ? "" : "s"}` : ""}. Double-click to open`)
-      .on_click((e, cx) => {
-        run("agent.focus", { terminal: un.address });
-        if ((e?.click_count ?? 1) >= 2 && viewMode() === "map") setView("terminals");
+      .tooltip(`${un.name}: ${un.status === "working" ? `gathering ${un.resource}` : un.status === "blocked" ? "under attack: needs you" : un.status === "done" ? "task complete" : "idle"}${un.workers ? ` · ${un.workers} worker${un.workers === 1 ? "" : "s"}` : ""}. Click to talk to it`)
+      .on_click((_e, cx) => {
+        if (this.wasDrag()) return;
+        openUnitChat(un.address, un.name);
         cx.notify();
       })
       .child(body);
@@ -165,7 +171,13 @@ export default class World {
     return { el, y: working ? un.home.y : at.y };
   }
 
-  terrain(S, view, w, h, towns) {
+  /** A press that ended a drag a moment ago is not a click. */
+  wasDrag() {
+    return Date.now() - this.dragEnd < 250;
+  }
+
+  /** Ground covering the visible part of the world container (shifted by the pan). */
+  terrain(S, view, w, h, towns, pan) {
     const t = this.pack.data.terrain ?? {};
     const out = [];
     if (t.ground) {
@@ -174,8 +186,8 @@ export default class World {
       // Whole pixels, and each copy 1 px larger than its step: fractional edges are where the GPU
       // blends a copy's border, which shows as seams between otherwise seamless copies.
       const W = Math.max(8, Math.round(gw * S)), H = Math.max(4, Math.round(gh * S));
-      const x0 = Math.round(((view.x(0) % W) + W) % W) - W, y0 = Math.round(((view.y(0) % H) + H) % H) - H;
-      for (let y = y0; y < h; y += H) for (let x = x0; x < w; x += W) out.push(image(this.path(t.ground)).absolute().left(x).top(y).w(W + 1).h(H + 1));
+      const x0 = Math.round((((view.x(0) + pan.x) % W) + W) % W) - W - pan.x, y0 = Math.round((((view.y(0) + pan.y) % H) + H) % H) - H - pan.y;
+      for (let y = y0; y < h - pan.y; y += H) for (let x = x0; x < w - pan.x; x += W) out.push(image(this.path(t.ground)).absolute().left(x).top(y).w(W + 1).h(H + 1));
       return out;
     }
     const grass = t.grass ?? [];
@@ -184,7 +196,7 @@ export default class World {
     const [tw, th] = this.pack.data.tile ?? [96, 48];
     const TW = tw * S, TH = th * S;
     // Staggered diamond rows covering the view, tile variant seeded by its grid cell.
-    const c0 = Math.floor((-view.x(0)) / TW) - 1, r0 = Math.floor((-view.y(0)) / (TH / 2)) - 1;
+    const c0 = Math.floor((-view.x(0) - pan.x) / TW) - 1, r0 = Math.floor((-view.y(0) - pan.y) / (TH / 2)) - 1;
     const cols = Math.ceil(w / TW) + 3, rows = Math.ceil(h / (TH / 2)) + 3;
     for (let r = r0; r < r0 + rows; r++) {
       for (let c = c0; c < c0 + cols; c++) {
@@ -211,21 +223,53 @@ export default class World {
       .on_size_change((size, cx) => {
         this.size = size;
         cx.notify();
+      })
+      // Drag anywhere on the map to move around; the wheel zooms.
+      .on_mouse_down("left", (e) => {
+        this.drag = { sx: e.position.x, sy: e.position.y, px: this.pan.x, py: this.pan.y, moved: false };
+      })
+      .on_mouse_move((e, cx) => {
+        if (!this.drag) return;
+        const dx = e.position.x - this.drag.sx, dy = e.position.y - this.drag.sy;
+        if (!this.drag.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+        this.drag.moved = true;
+        this.pan = { x: this.drag.px + dx, y: this.drag.py + dy };
+        cx.notify();
+      })
+      .on_mouse_up("left", () => {
+        if (this.drag?.moved) this.dragEnd = Date.now();
+        this.drag = null;
+      })
+      .on_hover((hovered) => {
+        if (!hovered) this.drag = null;
+      })
+      .on_scroll_wheel((e, cx) => {
+        const d = e.delta?.y ?? 0;
+        if (!d) return;
+        this.wheel = Math.max(0.5, Math.min(2.2, this.wheel * (d > 0 ? 1.08 : 1 / 1.08)));
+        cx.notify();
       });
     if (!this.pack) return root(u, rootEl.child(div().absolute().top(8).left(10).text_color(C.text).child("Loading the art pack…")));
     const ents = this.pack.data.entities ?? {};
+    // A different space shown: centre on its town again.
+    const act = spaces().find((x) => x.active)?.id ?? null;
+    if (act !== this.activeSpace) {
+      this.activeSpace = act;
+      this.pan = { x: 0, y: 0 };
+    }
+    const pan = this.pan;
     const model = worldModel({ spaces: spaces(), agents: agents(), terminals: terminals(), colors: shared("space.colors") });
     // Camera: the active town a little above centre; the world scale fits the view's height.
     // Scale: fit the view's height, but never so small that units stop reading (a split band is short).
-    const S = Math.max(0.45, Math.min(0.8, h / 440)) * (Number(shared("empires.worldZoom")) || 1);
+    const S = Math.max(0.45, Math.min(0.8, h / 440)) * (Number(shared("empires.worldZoom")) || 1) * this.wheel;
     const cx0 = w / 2, cy0 = h * 0.5;
     const view = { x: (x) => cx0 + x * S, y: (y) => cy0 + y * S };
-    const tiles = this.terrain(S, view, w, h, model.towns);
+    const tiles = this.terrain(S, view, w, h, model.towns, pan);
     // Trodden ground under each town center, between the ground and the sprites.
     const patch = ents.dirt_patch;
     if (patch) for (const town of model.towns) tiles.push(this.sprite(patch, patch.image ?? patch.variants?.[0], town.slot, town.x, town.y + 40, S, view));
     const items = [];
-    const visible = (x, y, pad = 400) => view.x(x) > -pad * S && view.x(x) < w + pad * S && view.y(y) > -pad * S && view.y(y) < h + pad * S;
+    const visible = (x, y, pad = 400) => view.x(x) + pan.x > -pad * S && view.x(x) + pan.x < w + pad * S && view.y(y) + pan.y > -pad * S && view.y(y) + pan.y < h + pad * S;
     for (const town of model.towns) {
       if (!visible(town.x, town.y, 900)) continue;
       const tree = ents[entityFallback(ents, "tree")];
@@ -240,7 +284,7 @@ export default class World {
         const tc = ents[tcName];
         items.push({
           y: town.y,
-          el: own(div().id(`tc-${town.space}`).cursor_pointer().tooltip(`${town.name}: town center. Click to show this space`).on_click(() => run("space.select", { id: town.space })).child(this.sprite(tc, tc.image, town.slot, town.x, town.y, S, view))),
+          el: div().id(`tc-${town.space}`).cursor_pointer().tooltip(`${town.name}: town center. Click to show this space`).on_click(() => { if (!this.wasDrag()) run("space.select", { id: town.space }); }).child(this.sprite(tc, tc.image, town.slot, town.x, town.y, S, view)),
         });
       }
       town.buildings.forEach((b) => {
@@ -250,7 +294,7 @@ export default class World {
         const rel = ent.variants ? ent.variants[hashStr(b.tab) % ent.variants.length] : ent.image;
         items.push({
           y: b.y,
-          el: own(div().id(`bld-${b.tab}`).cursor_pointer().tooltip(`${b.name ? `Tab ${b.name}` : "Tab"}${b.settled ? " (garrisoned)" : ""}: click to show it`).on_click(() => run("tab.select", { id: b.tab })).child(this.sprite(ent, rel, town.slot, b.x, b.y, S, view, { opacity: b.settled ? 0.8 : null }))),
+          el: div().id(`bld-${b.tab}`).cursor_pointer().tooltip(`${b.name ? `Tab ${b.name}` : "Tab"}${b.settled ? " (garrisoned)" : ""}: click to show it`).on_click(() => { if (!this.wasDrag()) run("tab.select", { id: b.tab }); }).child(this.sprite(ent, rel, town.slot, b.x, b.y, S, view, { opacity: b.settled ? 0.8 : null })),
         });
       });
       // Town banner under the town center: name, and "+N" when units overflow the cap.
@@ -287,7 +331,9 @@ export default class World {
     const live = new Set(model.units.map((un) => `${un.address}:${un.status}`));
     for (const k of Object.keys(this.t0)) if (!live.has(k)) delete this.t0[k];
     items.sort((a, b) => a.y - b.y);
-    rootEl = rootEl.children(tiles).children(items.map((i) => i.el));
+    // Everything on the map sits in one container moved by the pan, so dragging never
+    // restarts the units' native walking loops (their coordinates don't change).
+    rootEl = rootEl.child(div().absolute().left(pan.x).top(pan.y).w(w).h(h).children(tiles).children(items.map((i) => i.el)));
     // Corner controls: the view mode and the pack's credit line.
     rootEl = rootEl.child(
       own(
@@ -298,7 +344,7 @@ export default class World {
           .flex()
           .gap(u(4))
           .children(
-            [["split", "Split"], ["map", "Map"], ["terminals", "Terminals"]].map(([m, label]) =>
+            [...(pan.x || pan.y || this.wheel !== 1 ? [["center", "Centre"]] : []), ["split", "Split"], ["map", "Map"], ["terminals", "Terminals"]].map(([m, label]) =>
               div()
                 .id(`view-${m}`)
                 .px(u(6))
@@ -309,8 +355,15 @@ export default class World {
                 .text_size(u(11))
                 .bg(viewMode() === m ? C.gold : "#2b2016c0")
                 .text_color(viewMode() === m ? "#1f1c17" : C.text)
-                .tooltip(`${label} view (Alt+W cycles)`)
-                .on_click(() => setView(m))
+                .tooltip(m === "center" ? "Back to this space's town, at the normal zoom" : `${label} view (Alt+W cycles)`)
+                .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+                .on_click((_e, cx) => {
+                  if (m === "center") {
+                    this.pan = { x: 0, y: 0 };
+                    this.wheel = 1;
+                    cx.notify();
+                  } else setView(m);
+                })
                 .child(label),
             ),
           ),

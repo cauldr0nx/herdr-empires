@@ -143,7 +143,9 @@ function resolveTheme(t: any): Record<string, string> {
 
 // ---- 3. Render every role in a sandbox with stub modules
 const work = mkdtempSync(join(tmpdir(), "empires-check-"));
-cpSync(modDir, join(work, "mod"), { recursive: true, filter: (src) => !/\/(fonts|img|sounds|icons|node_modules)(\/|$)/.test(src) });
+// Skip Herdr's own generated files: running the real `herdr-app check` on a mod folder writes a
+// jsconfig.json and .d.ts files into it, and that jsconfig would override the stub paths below.
+cpSync(modDir, join(work, "mod"), { recursive: true, filter: (src) => !/\/(fonts|img|sounds|icons|packs|node_modules)(\/|$)/.test(src) && !/(jsconfig\.json|\.d\.ts)$/.test(src) });
 cpSync(join(repoRoot, "tools", "stubs"), join(work, "stubs"), { recursive: true });
 writeFileSync(join(work, "tsconfig.json"), JSON.stringify({ compilerOptions: { baseUrl: ".", paths: { "gpui-kit": ["./stubs/gpui-kit.js"], "gpui-base": ["./stubs/gpui-base.js"], herdr: ["./stubs/herdr.js"] } } }));
 
@@ -347,6 +349,9 @@ while (overlayQueue.length && guard++ < 200) {
 }
 herdr.log.shared["empires.selected"] = [];
 await renderRole("selection (demo, command layer, focused only)", roles.get("selection") ?? { role: "selection" }, demo, null);
+// The unit chat bar: opened inside a layout overlay (no props role in the spec), so render it here.
+await renderRole("chatbar (demo)", { role: "chatbar", terminal: "t1", name: "Unit", overlay: "o1" }, demo, null);
+await renderRole("chatbar (empty)", { role: "chatbar", terminal: "t1", overlay: "o1" }, empty, null);
 delete herdr.log.shared["empires.command"];
 
 rmSync(work, { recursive: true, force: true });

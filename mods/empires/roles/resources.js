@@ -11,6 +11,7 @@ import { C, ASSETS, FONT_SC, unit, root, plank, heading, button, own, fitLayout,
 import { clock, resourceCounts, ageFor, transitions, completions, orderAgents, nextIdle, nextBlocked, isNarrow, pruneGroups, selectedUnits } from "../data.js";
 import { onIdle, commandMode } from "./queue.js";
 import { cycleView, setView, viewMode } from "./views.js";
+import { openUnitChat } from "./chat.js";
 
 const RESOURCE_ICON = { food: "food", wood: "res-wood", gold: "gold", stone: "stone", population: "population" };
 const CHRONICLE_MAX = 500;
@@ -119,6 +120,13 @@ export default class Resources {
         return openDialog("options", { title: "Options" });
       case "view":
         return cycleView();
+      case "chat": {
+        // Talk to the focused unit, else the first one that needs you, else the first unit.
+        const list = agents();
+        const a = list.find((x) => x.address === (f?.agent ?? f?.terminal)) ?? list.find((x) => x.status === "blocked") ?? list[0];
+        if (a) openUnitChat(a.address, a.program?.name ?? "Unit");
+        return;
+      }
       case "view_split":
       case "view_map":
       case "view_terminals":
@@ -241,6 +249,26 @@ export default class Resources {
 
   // ---- pieces
 
+  /** Map / Split / Terminals, always on screen (the world's own corner buttons vanish with it). */
+  viewSwitch(u, narrow) {
+    const now = viewMode();
+    const go = (m) => {
+      // Leaving a zoomed (full-size) pane for the map: unzoom it so Split shows every pane again.
+      const f = focused();
+      const zoomed = f?.pane ? spaces().some((sp) => sp.tabs.some((t) => t.active && t.zoomed && sp.active)) : false;
+      if (m !== "terminals" && zoomed) run("pane.zoom", { pane: f.pane });
+      setView(m);
+    };
+    return h_flex()
+      .flex_none()
+      .gap(u(2))
+      .children(
+        [["map", narrow ? "Map" : "Map"], ["split", narrow ? "Split" : "Split"], ["terminals", narrow ? "Term" : "Terminals"]].map(([m, text]) =>
+          button(u, `view-${m}`, label(text, { bold: m === "map" }), () => go(m), { h: 24, pad: [0, 6], toggled: now === m, tooltip: m === "map" ? "The map: towns and units (Alt+W cycles views)" : m === "split" ? "The map over the terminals" : "Terminals only, no map" }).flex_none(),
+        ),
+      );
+  }
+
   counter(u, key, r, o = {}) {
     const narrow = o.narrow;
     const pulse = key === "stone" && r.value > 0 && !calm();
@@ -357,6 +385,7 @@ export default class Resources {
       .pr(u(6))
       .gap(u(narrow ? 4 : 8))
       .child(button(u, "menu", h_flex().items_center().gap(u(4)).child(glyph(u, "menu", 12, C.goldBright)).child(label(narrow ? "" : "Menu", { bold: true })), null, { h: 24, pad: [0, 6], tooltip: "Game menu (Alt+M)", onDown: (e) => this.menu(e.bounds) }).flex_none())
+      .child(this.viewSwitch(u, narrow))
       .child(div().flex_none().w(u(1)).h(u(20)).bg(C.wood.dark))
       .child(h_flex().flex_none().items_center().gap(u(narrow ? 2 : 6)).children(["food", "wood", "gold", "stone", "population"].map((k) => this.counter(u, k, res[k], { narrow }))))
       .child(div().flex_1())

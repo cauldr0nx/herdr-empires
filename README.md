@@ -43,13 +43,18 @@ overwrite any file of the same name that it did not install.
 
 ## The world (SPEC §18)
 
-- **Views** (`alt-w`, the corner buttons, or Menu → View): **Split** (the world
+- **Views** (the **Map / Split / Terminals** buttons in the top bar, `alt-w`, or
+  Menu → View): **Split** (the world
   over the terminals), **Map** (the world only), **Terminals** (no world).
 - **Units**: working agents walk between their tab's building and a resource
   and gather there; blocked agents wait at the town center under a red alert;
-  finished ones wear a check until you look; idle ones stand about. Click a unit
-  to focus its terminal, double-click to open it (from Map view), click a town
-  center for its space, a building for its tab.
+  finished ones wear a check until you look; idle ones stand about.
+- **Talk to a unit**: click it and a small chat window opens with its live
+  terminal; type to answer it, click anywhere outside (or ×) to close, **Open**
+  to jump to its pane. `alt-c` does the same for the focused unit (or the first
+  one that needs you). Click a town center for its space, a building for its tab.
+- **Move around**: drag the map; the scroll wheel zooms; **Centre** returns to
+  the current space's town.
 - **Options → World**: view, art pack, world zoom, and **Animate units** (off:
   a still world that redraws only on change; calm mode implies it).
 
@@ -70,6 +75,7 @@ or **Local import**. `tools/install.sh uninstall --purge` also removes local pac
 | Key | Action |
 |---|---|
 | `alt-w` | cycle the world view (split / map / terminals) |
+| `alt-c` | chat with the focused unit (or the first that needs you) |
 | `alt-.` | next idle or finished unit |
 | `alt-,` | next unit under attack (blocked) |
 | `alt-m` | game menu |
