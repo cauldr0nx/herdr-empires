@@ -15,7 +15,7 @@
 import { div, image, PathBuilder } from "gpui-kit";
 import { spaces, agents, terminals, panes, shared, setShared, run, readTextFile, appHome, knownAgents, exec, window as appWindow } from "herdr";
 import { C, FONT_SC, DISPLAY, ASSETS, unit, root, calm, openMenu } from "../kit.js";
-import { worldModel, tripState, dirRow, animFallback, entityFallback, hashStr, assignSlots, BUILDING_KINDS } from "../data.js";
+import { worldModel, tripState, dirRow, animFallback, entityFallback, hashStr, assignSlots, BUILDING_KINDS, chunksIn, wildernessChunk } from "../data.js";
 import { setView, viewMode } from "./views.js";
 import { openUnitChat } from "./chat.js";
 
@@ -193,6 +193,49 @@ export default class World {
     let img = image(this.path(rel, slot)).size_full();
     if (o.opacity) img = img.opacity(o.opacity);
     return div().id(id).absolute().left(view.x(x) - ax * S).top(view.y(y) - ay * S).w(w * S).h(h * S).child(img);
+  }
+
+  /** The pack's sprite for a wall piece (SPEC §18.4 "walls"), or null when the pack has none.
+   *  Towers come from the building set; a pack without both wall axes draws no walls. */
+  wallPiece(ents, type, part) {
+    const set = this.pack.data.walls?.[type] ?? this.pack.data.walls?.palisade;
+    if (!set || !set.a || !set.b) return null; // no full wall set: no walls, and no lone towers
+    if (part === "tower" || part === "gate_tower") {
+      const name = entityFallback(ents, part === "tower" ? "defense_tower" : "sentry_tower");
+      return name ? { ent: ents[name], rel: ents[name].image ?? ents[name].variants?.[0] } : null;
+    }
+    const name = set[part] ?? (part === "gateA" ? set.a : part === "gateB" ? set.b : set.corner);
+    const ent = name && ents[name];
+    return ent ? { ent, rel: ent.image ?? ent.variants?.[0] } : null;
+  }
+
+  /** The countryside in view: groves, trees, rocks, bushes, berries, tufts and herds. */
+  wilderness(ents, S, view, w, h, pan, towns, now, flat, items) {
+    const toWorld = (sx, sy) => ({ x: this.base.x + (sx - w / 2 - pan.x) / S, y: this.base.y + (sy - h * 0.5 - pan.y) / S });
+    const a = toWorld(-200, -200), b = toWorld(w + 200, h + 300);
+    const fauna = Array.isArray(this.pack.data.fauna) ? this.pack.data.fauna.filter((f) => ents[f]) : [];
+    const tree = ents[entityFallback(ents, "tree")];
+    for (const [cx, cy] of chunksIn(a.x, a.y, b.x, b.y)) {
+      for (const it of wildernessChunk(cx, cy, towns, fauna)) {
+        if (it.kind === "animal") {
+          const ent = ents[it.animal];
+          if (!ent) continue;
+          const dirs = ["S", "SW", "W", "NW", "N", "NE", "E", "SE"];
+          const moving = it.wander && this.moving();
+          const f = this.frame(ent, moving ? "walk" : "idle", null, dirs[it.dir % 8], now + it.v * 37, S);
+          let el = div().absolute().left(view.x(it.x) - f.ax).top(view.y(it.y) - f.ay).child(f.el);
+          if (moving) el = el.loop("left", { from: view.x(it.x) - f.ax, to: view.x(it.x) - f.ax + (it.dir < 4 ? -40 : 40) * S, period: 9000 + (it.v % 5) * 1000 });
+          items.push({ y: it.y, el });
+          continue;
+        }
+        const ent = it.kind === "tree" ? tree : ents[entityFallback(ents, it.kind)];
+        if (!ent) continue;
+        const vs = ent.variants ?? [ent.image];
+        const el = this.sprite(ent, vs[it.v % vs.length], "gray", it.x, it.y, S, view);
+        if (it.kind === "tuft") flat.push(el);
+        else items.push({ y: it.y, el });
+      }
+    }
   }
 
   /** One frame of a unit sheet, clipped: { el, w, h, ax, ay }. */
@@ -517,16 +560,23 @@ export default class World {
     const patch = ents.dirt_patch;
     if (patch) for (const town of model.towns) tiles.push(this.sprite(patch, patch.image ?? patch.variants?.[0], town.slot, town.x, town.y + 40, S, view));
     const items = [];
+    this.wilderness(ents, S, view, w, h, pan, model.towns, now, tiles, items);
     const visible = (x, y, pad = 400) => view.x(x) + pan.x > -pad * S && view.x(x) + pan.x < w + pad * S && view.y(y) + pan.y > -pad * S && view.y(y) + pan.y < h + pad * S;
     const isMoving = (t, b) => moving && ((moving.type === "town" && moving.town === t.space) || (moving.type === "building" && b && moving.tab === b.tab));
     for (const town of model.towns) {
       if (!visible(town.x, town.y, 1100)) continue;
       const tree = ents[entityFallback(ents, "tree")];
       if (tree) for (const f of town.forest) if (visible(f.x, f.y)) items.push({ y: f.y, el: this.sprite(tree, tree.variants?.[f.v % tree.variants.length] ?? tree.image, town.slot, f.x, f.y, S, view) });
-      for (const [kind, ent] of [["gold", "gold_mine"], ["stone", "stone_mine"], ["food", "berry_bush"]]) {
-        const name = entityFallback(ents, ent);
-        const p = town.nodes[kind];
-        if (name && p) items.push({ y: p.y, el: this.sprite(ents[name], ents[name].image ?? ents[name].variants?.[0], town.slot, p.x, p.y, S, view) });
+      // Mines and berries where the planner put them (drop sites stand beside them).
+      for (const m of town.mines) {
+        const name = entityFallback(ents, m.kind);
+        if (name && visible(m.x, m.y)) items.push({ y: m.y, el: this.sprite(ents[name], ents[name].image ?? ents[name].variants?.[0], town.slot, m.x, m.y, S, view) });
+      }
+      // Walls: closed on the grid, gates mid-side, posts or towers on the corners.
+      if (town.walls) for (const w of town.walls.pieces) {
+        const ent = this.wallPiece(ents, town.walls.type, w.part);
+        if (!ent || !visible(w.x, w.y)) continue;
+        items.push({ y: w.y, el: this.sprite(ent.ent, ent.rel, town.slot, w.x, w.y, S, view) });
       }
       // Grown buildings: what the town's level has unlocked (decor; hover says why).
       for (const ex of town.extras) {

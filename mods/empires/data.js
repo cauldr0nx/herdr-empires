@@ -570,7 +570,7 @@ export function resourceKind(tabId) {
 }
 
 /** Where town `k` (0 = the active one) sits, in world px: a spiral, so neighbours ring the active town. */
-export function townOrigin(k, spacing = 1400) {
+export function townOrigin(k, spacing = 2600) {
   if (k === 0) return { x: 0, y: 0 };
   const ring = Math.ceil((Math.sqrt(k + 1) - 1) / 2) || 1;
   const a = k * 2.399963; // golden angle: evenly spread
@@ -628,19 +628,39 @@ export function worldModel({ spaces = [], agents = [], terminals = [], colors = 
     const level = Math.max(townLevel(stats[s.id]), Math.min(9, Number(minLevels[s.id]) || 0));
     const tabs = (s.tabs ?? []).slice(0, Math.max(0, maxBuildings - buildingCount));
     buildingCount += tabs.length;
-    const sites = townSites(hashStr(s.id), tabs.length);
     const mine = agents.filter((a) => a.space === s.id);
-    const buildings = tabs.map((t, i) => {
-      const inTab = mine.filter((a) => a.tab === t.id);
-      const at = buildingPos[t.id] ?? sites.buildings[i];
-      return { tab: t.id, name: t.name, kind: kinds[t.id] ?? buildingKind(t, inTab, level), custom: Boolean(kinds[t.id]), settled: Boolean(t.settled), status: t.status ?? null, x: origin.x + at.x, y: origin.y + at.y };
+    const seed = hashStr(s.id);
+    const style = townStyle(seed);
+    // The planner places everything on the tile grid (SPEC §18.3); overrides win after it.
+    const plan = planTown(seed, level, style, tabs.map((t) => ({ id: t.id, resource: resourceKind(t.id), kind: kinds[t.id] ?? null, house: Boolean(t.settled) || !mine.some((a) => a.tab === t.id) })));
+    const buildings = tabs.map((t) => {
+      const pb = plan.tabBuildings.find((b) => b.tab === t.id) ?? { kind: "house", x: 0, y: 160 };
+      const at = buildingPos[t.id] ?? pb;
+      return { tab: t.id, name: t.name, kind: kinds[t.id] ?? pb.kind, custom: Boolean(kinds[t.id]), settled: Boolean(t.settled), status: t.status ?? null, x: origin.x + at.x, y: origin.y + at.y };
     });
     const color = playerColor(s.id, index, colors);
-    const town = { space: s.id, name: hideNames ? townAlias(s.id, slots) : s.name, active: Boolean(s.active), remote: Boolean(s.machine), color, slot: colorSlot(s.id, index, colors), level, style: TOWN_STYLES[townStyle(hashStr(s.id))].name, stats: stats[s.id] ?? null, x: origin.x, y: origin.y, buildings, extras: townExtras(hashStr(s.id), level, [...buildings.map((b) => ({ x: b.x - origin.x, y: b.y - origin.y })), ...sites.forest, ...Object.values(sites.nodes)]).map((e) => {
+    const off = (p) => ({ x: origin.x + p.x, y: origin.y + p.y });
+    const town = {
+      space: s.id,
+      name: hideNames ? townAlias(s.id, slots) : s.name,
+      active: Boolean(s.active),
+      remote: Boolean(s.machine),
+      color,
+      slot: colorSlot(s.id, index, colors),
+      level,
+      style: TOWN_STYLES[style].name,
+      stats: stats[s.id] ?? null,
+      x: origin.x,
+      y: origin.y,
+      buildings,
       // Grown buildings take the same overrides as tab buildings, keyed by their id.
-      const at = buildingPos[e.id] ?? e;
-      return { ...e, kind: kinds[e.id] ?? e.kind, custom: Boolean(kinds[e.id]), x: origin.x + at.x, y: origin.y + at.y };
-    }), forest: sites.forest.map((f) => ({ ...f, x: origin.x + f.x, y: origin.y + f.y })), nodes: Object.fromEntries(Object.entries(sites.nodes).map(([k2, p]) => [k2, { x: origin.x + p.x, y: origin.y + p.y }])), hidden: 0 };
+      extras: plan.extras.map((e) => ({ ...e, kind: kinds[e.id] ?? e.kind, custom: Boolean(kinds[e.id]), ...off(buildingPos[e.id] ?? e) })),
+      forest: plan.forest.map((f) => ({ ...f, ...off(f) })),
+      mines: plan.mines.map((m) => ({ ...m, ...off(m) })),
+      walls: plan.walls ? { type: plan.walls.type, pieces: plan.walls.pieces.map((w) => ({ ...w, ...off(w) })) } : null,
+      nodes: Object.fromEntries(Object.entries(plan.nodes).map(([k2, p]) => [k2, off(p)])),
+      hidden: 0,
+    };
     towns.push(town);
     mine.forEach((a, i) => {
       const b = buildings.find((x) => x.tab === a.tab);
@@ -734,4 +754,307 @@ export const TOWN_ALIASES = ["Ashford", "Briarwood", "Coldwater", "Dunmore", "Ea
 export function townAlias(id, slots = null) {
   const k = slots && slots[id] !== undefined ? Number(slots[id]) : hashStr(`alias:${id}`);
   return TOWN_ALIASES[k % TOWN_ALIASES.length] + (slots && k >= TOWN_ALIASES.length ? ` ${Math.floor(k / TOWN_ALIASES.length) + 1}` : "");
+}
+
+// ---- the town planner (SPEC §18.3): an RTS-AI-style build order on the iso tile grid
+//
+// Every building has a square footprint on the 2:1 tile grid and never overlaps another.
+// Resources come first (a forest blob, gold and stone mines, berries), seeded per town. Then
+// the town grows the way RTS AIs build: houses in a housing district by the town center;
+// drop sites next to their resource (lumber camp at the forest edge, mining camp at the mine,
+// mill by the berries with fields packed around it); market, smithy, temple and university on
+// the inner ring; a palisade, then stone walls, closed around the core along the grid with a
+// gate on each side and towers on the corners; a fortress, and a wonder for the biggest
+// towns. A tab's building is the drop site for what its agent gathers, so trips are short.
+// Ids are `<seed>:<kind>:<n>`: stable as a town grows, so moves and type changes stick.
+
+export const TILE = { w: 96, h: 48 };
+export const FOOT = { town_center: 4, house: 2, mill: 2, lumber_camp: 3, mining_camp: 3, market: 3, blacksmith: 3, monastery: 4, university: 4, defense_tower: 2, sentry_tower: 2, corral: 3, fortress: 4, wonder: 5, field: 4, gold_mine: 2, stone_mine: 2, berry_bush: 2 };
+
+/** World px (relative to the town center) of a tile's centre; fractional tiles allowed. */
+export function tileToWorld(i, j, tile = TILE) {
+  return { x: Math.round(((i - j) * tile.w) / 2), y: Math.round(((i + j) * tile.h) / 2) };
+}
+
+/** The drop site a resource needs. */
+export const DROPSITE = { wood: "lumber_camp", gold: "mining_camp", stone: "mining_camp", food: "mill" };
+
+/** The build order, by level: what a town adds (cumulative). WALLS/TOWERS are wall steps. */
+export function buildOrder(level, style) {
+  const L = [
+    ["house", "house"],
+    ["mill", "lumber_camp", "house"],
+    ["mining_camp:gold", "field", "field", "house"],
+    ["blacksmith", "market", "field", "house", "WALLS:palisade"],
+    ["house", "house", "field", "TOWERS"],
+    ["monastery", "university", "mining_camp:stone", "house"],
+    ["corral", "house", "house", "field", "GATE_TOWERS"],
+    ["fortress", "house", "field"],
+    ["house", "house", "market", "field", "WALLS:stone"],
+    ["wonder", "house"],
+  ];
+  const extra = {
+    farm: { 2: ["field"], 3: ["field"], 4: ["field", "field"], 6: ["mill", "field"], 8: ["field", "field"] },
+    war: { 3: ["TOWERS", "defense_tower"], 5: ["GATE_TOWERS", "WALLS:stone"], 6: ["defense_tower"], 7: ["defense_tower"] },
+    trade: { 3: ["house"], 4: ["market"], 5: ["house", "house"], 7: ["market", "house"] },
+    faith: { 3: ["monastery"], 4: ["university"], 6: ["monastery"] },
+  }[style] ?? {};
+  const out = [];
+  for (let l = 0; l <= Math.min(9, Math.max(0, level)); l++) out.push(...L[l], ...(extra[l] ?? []));
+  // A style that brings a building forward doesn't build it twice later.
+  const seen = {};
+  return out.filter((k) => {
+    if (k === "monastery" || k === "university" || k === "TOWERS" || k === "GATE_TOWERS" || k === "WALLS:stone") {
+      seen[k] = (seen[k] ?? 0) + 1;
+      if (k !== "monastery" && seen[k] > 1) return false;
+      if (k === "monastery" && seen[k] > (style === "faith" ? 2 : 1)) return false;
+    }
+    return true;
+  });
+}
+
+const planCache = new Map();
+
+/**
+ * Plans one town. tabs: [{ id, resource: wood|gold|stone|food, kind (override or null),
+ * house (true: a plain tab, settled or without agents) }]. Returns, in world px relative to
+ * the town center: { tabBuildings: [{ tab, kind, x, y }], extras: [{ id, kind, x, y }],
+ * forest: [{ x, y, v }], mines: [{ kind, x, y }], nodes: { wood, gold, stone, food },
+ * walls: null | { type, pieces: [{ part, x, y }] } }. Cached: the same inputs give the same plan.
+ */
+export function planTown(seed, level, style, tabs = [], tile = TILE) {
+  const key = `${seed}|${level}|${style}|${tabs.map((t) => `${t.id}:${t.resource}:${t.kind ?? ""}:${t.house ? 1 : 0}`).join(",")}|${tile.w}x${tile.h}`;
+  if (planCache.has(key)) return planCache.get(key);
+  const r = seeded(seed ^ 0x51ed270b);
+  const occ = new Set();
+  const free = (i, j) => !occ.has(`${i},${j}`);
+  const take = (i, j, n) => {
+    for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) occ.add(`${i + a},${j + b}`);
+  };
+  const fits = (i, j, n, m) => {
+    for (let a = -m; a < n + m; a++) for (let b = -m; b < n + m; b++) if (!free(i + a, j + b)) return false;
+    return true;
+  };
+  const centre = (i, j, n) => ({ ci: i + (n - 1) / 2, cj: j + (n - 1) / 2 });
+  // Spiral search for the free spot whose centre is nearest the anchor.
+  const place = (n, near, m = 1, maxR = 30) => {
+    const ai = Math.round(near.ci - (n - 1) / 2), aj = Math.round(near.cj - (n - 1) / 2);
+    for (let rad = 0; rad <= maxR; rad++) {
+      let best = null;
+      for (let di = -rad; di <= rad; di++)
+        for (let dj = -rad; dj <= rad; dj++) {
+          if (Math.max(Math.abs(di), Math.abs(dj)) !== rad) continue;
+          const i = ai + di, j = aj + dj;
+          if (!fits(i, j, n, m)) continue;
+          const c = centre(i, j, n);
+          const d = Math.hypot(c.ci - near.ci, c.cj - near.cj);
+          if (!best || d < best.d) best = { i, j, d };
+        }
+      if (best) {
+        take(best.i, best.j, n);
+        return centre(best.i, best.j, n);
+      }
+    }
+    return null;
+  };
+  const at = (ang, dist) => ({ ci: Math.round(Math.cos(ang) * dist), cj: Math.round(Math.sin(ang) * dist) });
+  const world = (c) => tileToWorld(c.ci, c.cj, tile);
+
+  // The town center, and a clear ring round it (the square in front of it stays open).
+  take(-2, -2, FOOT.town_center);
+  const a0 = r() * Math.PI * 2; // where the forest lies
+  // Resources: a forest blob, then mines and berries around the town.
+  const forestC = at(a0, 12);
+  const trees = [];
+  for (let di = -4; di <= 4; di++)
+    for (let dj = -4; dj <= 4; dj++) {
+      const d = Math.hypot(di, dj);
+      if (d > 3.6 + r() * 0.9) continue;
+      const i = forestC.ci + di, j = forestC.cj + dj;
+      occ.add(`${i},${j}`);
+      if (r() < 0.8) trees.push({ ci: i + (r() - 0.5) * 0.5, cj: j + (r() - 0.5) * 0.5, v: Math.floor(r() * 3) });
+    }
+  const edge = (c, toward = { ci: 0, cj: 0 }) => {
+    // The free tile next to a resource, on its town side.
+    const len = Math.hypot(toward.ci - c.ci, toward.cj - c.cj) || 1;
+    for (let s = 1; s < 12; s++) {
+      const p = { ci: Math.round(c.ci + ((toward.ci - c.ci) / len) * s), cj: Math.round(c.cj + ((toward.cj - c.cj) / len) * s) };
+      if (free(p.ci, p.cj)) return p;
+    }
+    return c;
+  };
+  const mineAt = (kind, ang, dist) => {
+    const c = place(FOOT[kind], at(ang, dist), 1);
+    return { kind, ...c };
+  };
+  const gold = mineAt("gold_mine", a0 + 2.1 + (r() - 0.5) * 0.4, 9);
+  const stone = mineAt("stone_mine", a0 - 2.1 + (r() - 0.5) * 0.4, 9.5);
+  const berries = mineAt("berry_bush", a0 + Math.PI + (r() - 0.5) * 0.6, 6.5);
+  const nodes = { wood: edge(forestC), gold: edge(gold), stone: edge(stone), food: edge(berries) };
+  // Districts.
+  const housing = at(a0 + Math.PI + 0.9, 5);
+  const inner = at(a0 + Math.PI - 1.0, 5.5);
+  const millSpot = { ...nodes.food };
+  const tabBuildings = [];
+  const extras = [];
+  const count = {};
+  const dropsites = {};
+  let millC = null;
+  const anchorFor = (kind, sub) => {
+    if (kind === "house") return housing;
+    if (kind === "mill") return millSpot;
+    if (kind === "field") return millC ?? millSpot;
+    if (kind === "corral") return millC ?? millSpot;
+    if (kind === "lumber_camp") return nodes.wood;
+    if (kind === "mining_camp") return sub === "stone" ? nodes.stone : nodes.gold;
+    if (kind === "fortress") return at(a0 + Math.PI, 7);
+    if (kind === "wonder") return at(a0 + Math.PI - 0.4, 6.5);
+    if (kind === "defense_tower" || kind === "sentry_tower") return at(r() * Math.PI * 2, 5);
+    return inner;
+  };
+  const margin = (kind) => (kind === "house" || kind === "field" ? 0 : 1);
+  const add = (kind, sub, tab) => {
+    const n = FOOT[kind] ?? 3;
+    const c = place(n, anchorFor(kind, sub), margin(kind));
+    if (!c) return null;
+    if (kind === "mill" && !millC) millC = c;
+    const p = world(c);
+    if (tab) tabBuildings.push({ tab: tab.id, kind, x: p.x, y: p.y, ci: c.ci, cj: c.cj });
+    else {
+      count[kind] = (count[kind] ?? 0) + 1;
+      extras.push({ id: `${seed}:${kind}:${count[kind]}`, kind, x: p.x, y: p.y, ci: c.ci, cj: c.cj });
+    }
+    if (kind === "mill" || kind === "lumber_camp" || kind === "mining_camp") dropsites[`${kind}:${sub ?? ""}`] = true;
+    return c;
+  };
+  // Tabs first: each tab's building is its agent's drop site (or a house for a plain tab).
+  for (const t of tabs) {
+    const kind = t.kind ?? (t.house ? "house" : DROPSITE[t.resource] ?? "house");
+    add(kind, t.resource, t);
+  }
+  // Then the build order; walls and towers once the core stands.
+  const steps = buildOrder(level, style);
+  let wallType = null;
+  let towers = false;
+  let gateTowers = false;
+  for (const step of steps) {
+    if (step.startsWith("WALLS:")) {
+      wallType = step.slice(6);
+      continue;
+    }
+    if (step === "TOWERS") {
+      towers = true;
+      continue;
+    }
+    if (step === "GATE_TOWERS") {
+      gateTowers = true;
+      continue;
+    }
+    const [kind, sub] = step.split(":");
+    // A drop site the tabs already provide isn't built twice.
+    if ((kind === "mill" || kind === "lumber_camp" || kind === "mining_camp") && dropsites[`${kind}:${sub ?? (kind === "mill" ? "food" : kind === "lumber_camp" ? "wood" : "gold")}`]) continue;
+    add(kind, sub);
+  }
+  // Walls: a closed rectangle on the grid around the core (not the outlying drop sites),
+  // two tiles out; gates mid-side; corners get posts, or towers from TOWERS on.
+  let walls = null;
+  if (wallType) {
+    const core = [{ ci: 0, cj: 0, n: FOOT.town_center }, ...[...tabBuildings, ...extras].filter((b) => b.kind !== "lumber_camp" && b.kind !== "mining_camp" && !/tower/.test(b.kind)).map((b) => ({ ci: b.ci, cj: b.cj, n: FOOT[b.kind] ?? 3 }))];
+    let i0 = Infinity, i1 = -Infinity, j0 = Infinity, j1 = -Infinity;
+    for (const b of core) {
+      i0 = Math.min(i0, Math.floor(b.ci - (b.n - 1) / 2));
+      i1 = Math.max(i1, Math.ceil(b.ci + (b.n - 1) / 2));
+      j0 = Math.min(j0, Math.floor(b.cj - (b.n - 1) / 2));
+      j1 = Math.max(j1, Math.ceil(b.cj + (b.n - 1) / 2));
+    }
+    i0 -= 2; i1 += 2; j0 -= 2; j1 += 2;
+    const pieces = [];
+    const piece = (part, i, j) => {
+      if (!free(i, j)) return; // a forest or a mine: the wall stops there
+      const p = tileToWorld(i, j, tile);
+      pieces.push({ part, x: p.x, y: p.y, ci: i, cj: j });
+    };
+    const mi = Math.round((i0 + i1) / 2), mj = Math.round((j0 + j1) / 2);
+    for (let i = i0 + 1; i < i1; i++) {
+      piece(i === mi ? "gateA" : "a", i, j0);
+      piece(i === mi ? "gateA" : "a", i, j1);
+    }
+    for (let j = j0 + 1; j < j1; j++) {
+      piece(j === mj ? "gateB" : "b", i0, j);
+      piece(j === mj ? "gateB" : "b", i1, j);
+    }
+    for (const [i, j] of [[i0, j0], [i1, j0], [i0, j1], [i1, j1]]) piece(towers ? "tower" : "corner", i, j);
+    if (gateTowers)
+      for (const [i, j] of [[mi - 1, j0 - 1], [mi + 1, j1 + 1], [i0 - 1, mj + 1], [i1 + 1, mj - 1]]) piece("gate_tower", i, j);
+    walls = { type: wallType, pieces, rect: { i0, i1, j0, j1 } };
+  }
+  const plan = {
+    tabBuildings,
+    extras,
+    forest: trees.map((t) => ({ ...tileToWorld(t.ci, t.cj, tile), v: t.v })),
+    mines: [gold, stone, berries].filter((m) => m.ci !== undefined).map((m) => ({ kind: m.kind, ...tileToWorld(m.ci, m.cj, tile) })),
+    nodes: Object.fromEntries(Object.entries(nodes).map(([k, c]) => [k, tileToWorld(c.ci, c.cj, tile)])),
+    walls,
+  };
+  if (planCache.size > 64) planCache.clear();
+  planCache.set(key, plan);
+  return plan;
+}
+
+// ---- the wilderness (SPEC §18.1): groves, lone trees, rocks, berries, herds, tufts, so the
+// map between towns is countryside, not an empty plane. Generated per map chunk, seeded by
+// the chunk's coordinates (the same every time), clear of towns, only for chunks in view.
+
+export const CHUNK = { w: 1152, h: 576 };
+
+/** Which chunks a world rectangle touches. */
+export function chunksIn(x0, y0, x1, y1) {
+  const out = [];
+  for (let cy = Math.floor(y0 / CHUNK.h); cy <= Math.floor(y1 / CHUNK.h); cy++)
+    for (let cx = Math.floor(x0 / CHUNK.w); cx <= Math.floor(x1 / CHUNK.w); cx++) out.push([cx, cy]);
+  return out;
+}
+
+/** Is a world point inside a town's grounds (kept clear of wilderness)? */
+export function inTown(x, y, towns, pad = 1050) {
+  return towns.some((t) => Math.hypot(x - t.x, (y - t.y) * 2) < pad);
+}
+
+/**
+ * One chunk's wilderness: [{ kind: tree|rocks|bush|tuft|berry_bush|gold_mine|stone_mine|animal,
+ * x, y, v, animal? }]. `fauna` names the pack's animals (empty: no herds).
+ */
+export function wildernessChunk(cx, cy, towns = [], fauna = []) {
+  const r = seeded(hashStr(`wild:${cx},${cy}`));
+  const ox = cx * CHUNK.w, oy = cy * CHUNK.h;
+  const out = [];
+  const put = (kind, x, y, extra = {}) => {
+    if (inTown(x, y, towns)) return;
+    out.push({ kind, x: Math.round(x), y: Math.round(y), v: Math.floor(r() * 1000), ...extra });
+  };
+  const spot = () => ({ x: ox + r() * CHUNK.w, y: oy + r() * CHUNK.h });
+  // Groves: blobs of trees.
+  const groves = Math.floor(r() * 2.4);
+  for (let g = 0; g < groves; g++) {
+    const c = spot();
+    const n = 6 + Math.floor(r() * 12);
+    for (let k = 0; k < n; k++) {
+      const a = r() * Math.PI * 2, d = Math.sqrt(r()) * (90 + n * 6);
+      put("tree", c.x + Math.cos(a) * d, c.y + Math.sin(a) * d * 0.5);
+    }
+  }
+  // Lone trees, rocks, bushes, berries, the odd mine, and grass.
+  for (let k = 0, n = 3 + Math.floor(r() * 5); k < n; k++) { const p = spot(); put("tree", p.x, p.y); }
+  for (let k = 0, n = Math.floor(r() * 3); k < n; k++) { const p = spot(); put("rocks", p.x, p.y); }
+  for (let k = 0, n = 1 + Math.floor(r() * 3); k < n; k++) { const p = spot(); put("bush", p.x, p.y); }
+  if (r() < 0.45) { const p = spot(); put("berry_bush", p.x, p.y); if (r() < 0.6) put("berry_bush", p.x + 50, p.y + 18); }
+  if (r() < 0.12) { const p = spot(); put(r() < 0.5 ? "gold_mine" : "stone_mine", p.x, p.y); }
+  for (let k = 0, n = 4 + Math.floor(r() * 6); k < n; k++) { const p = spot(); put("tuft", p.x, p.y); }
+  // A herd now and then.
+  if (fauna.length && r() < 0.4) {
+    const animal = fauna[Math.floor(r() * fauna.length)];
+    const c = spot();
+    for (let k = 0, n = 2 + Math.floor(r() * 4); k < n; k++) put("animal", c.x + (r() - 0.5) * 160, c.y + (r() - 0.5) * 70, { animal, dir: Math.floor(r() * 8), wander: r() < 0.5 });
+  }
+  return out;
 }

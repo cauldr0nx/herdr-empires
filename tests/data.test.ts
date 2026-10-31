@@ -410,3 +410,61 @@ describe("hide names", () => {
     expect(w.towns[0].name).not.toContain("secret");
   });
 });
+
+describe("town planner (SPEC §18.3)", () => {
+  const tabs = [{ id: "a", resource: "wood" }, { id: "b", resource: "gold" }, { id: "c", resource: "food" }, { id: "d", resource: "wood", house: true }];
+  const cells = (b) => {
+    const n = D.FOOT[b.kind] ?? 3;
+    const out = [];
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) out.push(`${Math.round(b.ci - (n - 1) / 2) + i},${Math.round(b.cj - (n - 1) / 2) + j}`);
+    return out;
+  };
+
+  test("no two buildings share a tile, at any level", () => {
+    for (const level of [0, 3, 6, 9]) {
+      const p = D.planTown(1234, level, "farm", tabs);
+      const seen = new Set(["-2,-2"]);
+      for (const b of [...p.tabBuildings, ...p.extras]) for (const c of cells(b)) {
+        expect(seen.has(c)).toBe(false);
+        seen.add(c);
+      }
+    }
+  });
+
+  test("a tab's building is its agent's drop site, standing by the resource", () => {
+    const p = D.planTown(99, 4, "trade", tabs);
+    const kind = (id) => p.tabBuildings.find((b) => b.tab === id).kind;
+    expect(kind("a")).toBe("lumber_camp");
+    expect(kind("b")).toBe("mining_camp");
+    expect(kind("c")).toBe("mill");
+    expect(kind("d")).toBe("house");
+    const near = (b, node) => Math.hypot(b.x - node.x, (b.y - node.y) * 2) < 400;
+    expect(near(p.tabBuildings.find((b) => b.tab === "a"), p.nodes.wood)).toBe(true);
+    expect(near(p.tabBuildings.find((b) => b.tab === "c"), p.nodes.food)).toBe(true);
+  });
+
+  test("walls come at level 3, closed on the grid with a gate per side", () => {
+    expect(D.planTown(7, 2, "farm", []).walls).toBe(null);
+    const w = D.planTown(7, 3, "farm", []).walls;
+    expect(w.type).toBe("palisade");
+    const { i0, i1, j0, j1 } = w.rect;
+    for (const p of w.pieces) expect(p.ci === i0 || p.ci === i1 || p.cj === j0 || p.cj === j1).toBe(true);
+    expect(w.pieces.filter((p) => p.part === "gateA").length + w.pieces.filter((p) => p.part === "gateB").length).toBeGreaterThan(0);
+    expect(D.planTown(7, 8, "farm", []).walls.type).toBe("stone");
+    expect(D.planTown(7, 5, "war", []).walls.type).toBe("stone");
+  });
+
+  test("grown building ids are stable as the town grows", () => {
+    const ids = (lvl) => D.planTown(555, lvl, "faith", []).extras.map((e) => e.id);
+    const small = ids(3), big = ids(7);
+    for (const id of small.filter((x) => !x.includes("field"))) expect(big).toContain(id);
+  });
+
+  test("the wilderness is seeded, and keeps out of towns", () => {
+    const a = D.wildernessChunk(3, -2, []), b = D.wildernessChunk(3, -2, []);
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    expect(a.length).toBeGreaterThan(3);
+    const town = [{ x: 3 * D.CHUNK.w + 576, y: -2 * D.CHUNK.h + 288 }];
+    expect(D.wildernessChunk(3, -2, town).every((it) => !D.inTown(it.x, it.y, town))).toBe(true);
+  });
+});
