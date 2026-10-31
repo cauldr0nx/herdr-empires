@@ -21,11 +21,12 @@ import { openUnitChat } from "./chat.js";
 
 const SHIPPED = `${ASSETS}/packs/zeroad`;
 const LOCAL = "empires-packs/local";
-const FPS_CAP = 6;
+const FPS_CAP = 4;
 const SPEED = 55; // world px per second, walking
 const FLAT = new Set(["field"]);
-const STATS_EVERY = 10 * 60 * 1000;
-const WILD_MAX = 420; // scenery pieces drawn at most (nearest the centre of the view first) // repo stats (commits, age): gently
+const STATS_EVERY = 10 * 60 * 1000; // repo stats (commits, age): gently
+const WILD_MAX = 90; // countryside pieces considered per render (nearest the centre of the view)
+const SPRITE_CAP = 150; // sprites built per render at most: a render has 50 ms (see render)
 const KIND_LABEL = { house: "House", lumber_camp: "Lumber camp", mining_camp: "Mining camp", mill: "Mill", market: "Market", blacksmith: "Blacksmith", university: "University", monastery: "Monastery", defense_tower: "Defense tower", sentry_tower: "Sentry tower", corral: "Corral", fortress: "Fortress", wonder: "Wonder", field: "Farm field", palisade: "Palisade", palisade_corner: "Palisade corner", gate: "Gate" };
 
 /** Loads the chosen art pack: { base, data } or null. Auto prefers a local import. */
@@ -183,6 +184,7 @@ export default class World {
       try {
         localStorage.setItem(key, JSON.stringify(plan));
       } catch {}
+      this.planGen = (this.planGen ?? 0) + 1;
       changed = true;
     }
     if (this.pendingShared) {
@@ -201,7 +203,8 @@ export default class World {
     if (!this.pack || !this.moving() || viewMode() === "terminals") return false;
     if (!this.size || this.size.width < 40 || this.size.height < 40) return false;
     if (appWindow()?.active === false && shared("empires.animateInactive") !== true) return false;
-    return agents().length > 0;
+    // Frames only step for units actually on screen (set by the last render).
+    return agents().length > 0 && this.unitsInView !== false;
   }
 
   /** A press that ended a drag a moment ago is not a click. */
@@ -276,15 +279,16 @@ export default class World {
           const f = this.frame(ent, moving ? "walk" : "idle", null, dirs[it.dir % 8], now + it.v * 37, S);
           let el = div().absolute().left(view.x(it.x) - f.ax).top(view.y(it.y) - f.ay).child(f.el);
           if (moving) el = el.loop("left", { from: view.x(it.x) - f.ax, to: view.x(it.x) - f.ax + (it.dir < 4 ? -40 : 40) * S, period: 9000 + (it.v % 5) * 1000 });
-          items.push({ y: it.y, el });
+          items.push({ y: it.y, x: it.x, pri: 5, el });
           continue;
         }
         const ent = it.kind === "tree" ? tree : ents[entityFallback(ents, it.kind)];
         if (!ent) continue;
         const vs = ent.variants ?? [ent.image];
-        const el = this.sprite(ent, vs[it.v % vs.length], "gray", it.x, it.y, S, view);
-        if (it.kind === "tuft") flat.push(el);
-        else items.push({ y: it.y, el });
+        const rel = vs[it.v % vs.length];
+        if (it.kind === "tuft") {
+          if (S > 0.5) flat.push(this.sprite(ent, rel, "gray", it.x, it.y, S, view)); // grass only up close
+        } else items.push({ y: it.y, x: it.x, pri: 5, make: () => this.sprite(ent, rel, "gray", it.x, it.y, S, view) });
       }
     }
   }
@@ -528,9 +532,18 @@ export default class World {
     const all = spaces();
     const slots = assignSlots(all.map((s) => s.id), obj("empires.townSlots"));
     if (Object.keys(slots).length !== Object.keys(obj("empires.townSlots")).length) (this.pendingShared ??= {})["empires.townSlots"] = slots;
-    const model = worldModel({
+    // The model only changes when Herdr's data or the town state does: cache it on a cheap key.
+    const ag = agents();
+    const modelKey = [
+      all.map((s) => `${s.id}:${s.active ? 1 : 0}:${s.name}:${s.tabs.map((t) => `${t.id}.${t.settled ? 1 : 0}.${t.status ?? ""}.${t.name}`).join("/")}`).join("|"),
+      ag.map((a) => `${a.address}:${a.status}:${a.focused ? 1 : 0}:${a.tab}`).join("|"),
+      JSON.stringify([slots, shared("empires.townPos"), shared("empires.buildingPos"), shared("empires.buildingKinds"), shared("empires.townLevels"), shared("empires.hideNames"), shared("space.colors")]),
+      JSON.stringify(this.townStats()).replace(/\.\d+/g, ""),
+      this.planGen ?? 0,
+    ].join("#");
+    const model = this.modelKey === modelKey && this.model ? this.model : worldModel({
       spaces: all,
-      agents: agents(),
+      agents: ag,
       terminals: terminals(),
       colors: shared("space.colors"),
       slots,
@@ -547,6 +560,8 @@ export default class World {
       },
       looks: Array.isArray(this.pack.data.unitLooks) && this.pack.data.unitLooks.length ? this.pack.data.unitLooks : ["villager"],
     });
+    this.model = model;
+    this.modelKey = modelKey;
     const active = model.towns.find((t) => t.active) ?? model.towns[0];
     // Remember each town's highest level, so growth survives restarts and slow repo reads.
     const levels = obj("empires.townLevels");
@@ -589,12 +604,18 @@ export default class World {
         if (!this.drag.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
         this.drag.moved = true;
         this.pan = { x: this.drag.px + dx, y: this.drag.py + dy };
-        cx.notify();
+        // A redraw per pointer event is far more than the eye needs: ~30 a second.
+        const t = Date.now();
+        if (t - (this.lastDragDraw ?? 0) >= 33) {
+          this.lastDragDraw = t;
+          cx.notify();
+        }
       })
-      .on_mouse_up("left", () => {
+      .on_mouse_up("left", (_e, cx) => {
         if (this.drag?.moved) {
           this.dragEnd = Date.now();
           this.saveCamera();
+          cx.notify(); // the final position, even if the last move was throttled
         }
         this.drag = null;
       })
@@ -622,17 +643,17 @@ export default class World {
     for (const town of model.towns) {
       if (!visible(town.x, town.y, 1100)) continue;
       const tree = ents[entityFallback(ents, "tree")];
-      if (tree) for (const f of town.forest) if (visible(f.x, f.y)) items.push({ y: f.y, el: this.sprite(tree, tree.variants?.[f.v % tree.variants.length] ?? tree.image, town.slot, f.x, f.y, S, view) });
+      if (tree) for (const f of town.forest) if (visible(f.x, f.y)) items.push({ y: f.y, x: f.x, pri: 4, make: () => this.sprite(tree, tree.variants?.[f.v % tree.variants.length] ?? tree.image, town.slot, f.x, f.y, S, view) });
       // Mines and berries where the planner put them (drop sites stand beside them).
       for (const m of town.mines) {
         const name = entityFallback(ents, m.kind);
-        if (name && visible(m.x, m.y)) items.push({ y: m.y, el: this.sprite(ents[name], ents[name].image ?? ents[name].variants?.[0], town.slot, m.x, m.y, S, view) });
+        if (name && visible(m.x, m.y)) items.push({ y: m.y, x: m.x, pri: 3, make: () => this.sprite(ents[name], ents[name].image ?? ents[name].variants?.[0], town.slot, m.x, m.y, S, view) });
       }
       // Walls: closed on the grid, gates mid-side, posts or towers on the corners.
       if (town.walls) for (const w of town.walls.pieces) {
         const ent = this.wallPiece(ents, town.walls.type, w.part);
         if (!ent || !visible(w.x, w.y)) continue;
-        items.push({ y: w.y, el: this.sprite(ent.ent, ent.rel, town.slot, w.x, w.y, S, view) });
+        items.push({ y: w.y, x: w.x, pri: 2, make: () => this.sprite(ent.ent, ent.rel, town.slot, w.x, w.y, S, view) });
       }
       // Grown buildings: what the town's level has unlocked (decor; hover says why).
       for (const ex of town.extras) {
@@ -648,7 +669,9 @@ export default class World {
         const asB = { tab: ex.id, kind: ex.kind, extra: true };
         items.push({
           y: ex.y,
-          el: this.spriteBox(`ex-${ex.id}`, ent, rel, town.slot, ex.x, ex.y, S, view, { opacity: isMoving(town, asB) ? 0.35 : null })
+          x: ex.x,
+          pri: 2,
+          make: () => this.spriteBox(`ex-${ex.id}`, ent, rel, town.slot, ex.x, ex.y, S, view, { opacity: isMoving(town, asB) ? 0.35 : null })
             .tooltip(`${KIND_LABEL[ex.kind] ?? ex.kind}: part of ${town.name}, a level ${town.level} ${town.style} town${town.stats?.commits ? ` (${town.stats.commits} commits)` : ""}. Right-click to train units, move or change it`)
             .on_mouse_down("right", (e, cx) => {
               cx.stop_propagation();
@@ -661,7 +684,9 @@ export default class World {
         const tc = ents[tcName];
         items.push({
           y: town.y,
-          el: this.spriteBox(`tc-${town.space}`, tc, tc.image, town.slot, town.x, town.y, S, view, { opacity: isMoving(town) ? 0.35 : null })
+          x: town.x,
+          pri: 1,
+          make: () => this.spriteBox(`tc-${town.space}`, tc, tc.image, town.slot, town.x, town.y, S, view, { opacity: isMoving(town) ? 0.35 : null })
             .cursor_pointer()
             .tooltip(`${town.name}: town center · level ${town.level} ${town.style} town${town.stats?.commits ? ` · ${town.stats.commits} commits` : ""}. Click to show this space; right-click to train units or move the town`)
             .on_click(() => {
@@ -681,7 +706,9 @@ export default class World {
         const rel = ent.variants ? ent.variants[hashStr(b.tab) % ent.variants.length] : ent.image;
         items.push({
           y: b.y,
-          el: this.spriteBox(`bld-${b.tab}`, ent, rel, town.slot, b.x, b.y, S, view, { opacity: isMoving(town, b) ? 0.35 : b.settled ? 0.8 : null })
+          x: b.x,
+          pri: 1,
+          make: () => this.spriteBox(`bld-${b.tab}`, ent, rel, town.slot, b.x, b.y, S, view, { opacity: isMoving(town, b) ? 0.35 : b.settled ? 0.8 : null })
             .cursor_pointer()
             .tooltip(`${KIND_LABEL[b.kind] ?? "Building"}: ${b.name ? `tab ${b.name}` : "a tab"}${b.settled ? " (garrisoned)" : ""}. Click to show it; right-click to train, move or change it`)
             .on_click(() => {
@@ -697,6 +724,8 @@ export default class World {
       // Town banner under the town center: name, level, and "+N" when units overflow the cap.
       items.push({
         y: town.y + 1e6, // always on top
+        x: town.x,
+        pri: 0,
         el: div()
           .absolute()
           .left(view.x(town.x) - 80)
@@ -719,15 +748,33 @@ export default class World {
           ),
       });
     }
+    let drawnUnits = 0;
     for (const un of model.units) {
       if (!visible(un.home.x, un.home.y, 900)) continue;
       const r = this.unitEl(un, S, view, now);
-      if (r) items.push(r);
+      if (r) {
+        items.push({ ...r, x: un.home.x, pri: 0 });
+        drawnUnits++;
+      }
     }
+    this.unitsInView = drawnUnits > 0;
     // Forget trip clocks of units that are gone or changed status.
     const live = new Set(model.units.map((un) => `${un.address}:${un.status}`));
     for (const k of Object.keys(this.t0)) if (!live.has(k)) delete this.t0[k];
-    items.sort((a, b) => a.y - b.y);
+    // A render has 50 ms in Herdr's script engine (a longer one is cut off: "could not be
+    // re-rendered"). Elements are what cost, so only the most important ones nearest the view's
+    // centre are built: units and town centers first, scenery last.
+    const ctr = { x: this.base.x - pan.x / S, y: this.base.y - pan.y / S };
+    let kept = items;
+    if (items.length > SPRITE_CAP) {
+      kept = items
+        .map((it) => ({ it, k: (it.pri ?? 3) * 1e7 + Math.hypot((it.x ?? ctr.x) - ctr.x, ((it.y > 1e5 ? it.y - 1e6 : it.y) - ctr.y) * 2) }))
+        .sort((a, b) => a.k - b.k)
+        .slice(0, SPRITE_CAP)
+        .map((o) => o.it);
+    }
+    kept.sort((a, b) => a.y - b.y);
+    const built = kept.map((it) => it.el ?? it.make());
     // The building (or town center) being moved follows the pointer as a ghost.
     let ghost = null;
     if (moving && this.hover) {
@@ -741,7 +788,7 @@ export default class World {
     }
     // Everything on the map sits in one container moved by the pan, so dragging never
     // restarts the units' native walking loops (their coordinates don't change).
-    rootEl = rootEl.child(div().absolute().left(pan.x).top(pan.y).w(w).h(h).children(tiles).children(items.map((i) => i.el)));
+    rootEl = rootEl.child(div().absolute().left(pan.x).top(pan.y).w(w).h(h).children(tiles).children(built));
     if (ghost) rootEl = rootEl.child(ghost);
     if (moving)
       rootEl = rootEl.child(

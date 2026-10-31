@@ -908,7 +908,7 @@ export function planTown(seed, level, style, tabs = [], tile = TILE) {
       if (d > 3.6 + r() * 0.9) continue;
       const i = forestC.ci + di, j = forestC.cj + dj;
       occ.add(`${i},${j}`);
-      if (r() < 0.8) trees.push({ ci: i + (r() - 0.5) * 0.5, cj: j + (r() - 0.5) * 0.5, v: Math.floor(r() * 3) });
+      if (r() < 0.5) trees.push({ ci: i + (r() - 0.5) * 0.5, cj: j + (r() - 0.5) * 0.5, v: Math.floor(r() * 3) });
     }
   const edge = (c, toward = { ci: 0, cj: 0 }) => {
     // The free tile next to a resource, on its town side.
