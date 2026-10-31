@@ -2,6 +2,7 @@
   "layout:empires": {
     "alt-w": "empires.view",
     "alt-c": "empires.chat",
+    "alt-shift-c": "empires.chat_pinned",
     "alt-.": "empires.idle",
     "alt-,": "empires.alarm",
     "alt-m": "empires.menu",

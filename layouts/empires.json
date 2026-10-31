@@ -47,7 +47,7 @@
           "id": "world",
           "type": "block",
           "size": {
-            "weight": 35
+            "weight": 1
           },
           "content": {
             "mod": "empires",
@@ -88,8 +88,9 @@
             }
           },
           "size": {
-            "weight": 65
-          }
+            "weight": 1
+          },
+          "hidden": true
         }
       ],
       "floating": [

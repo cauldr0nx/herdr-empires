@@ -333,9 +333,9 @@ describe("world model (SPEC §18.3)", () => {
   });
 
   test("views cycle", () => {
-    expect(D.nextView("split")).toBe("map");
-    expect(D.nextView("map")).toBe("terminals");
-    expect(D.nextView("terminals")).toBe("split");
-    expect(D.nextView(undefined)).toBe("map");
+    expect(D.nextView("map")).toBe("split");
+    expect(D.nextView("split")).toBe("terminals");
+    expect(D.nextView("terminals")).toBe("map");
+    expect(D.nextView(undefined)).toBe("split"); // unknown counts as map, the default
   });
 });

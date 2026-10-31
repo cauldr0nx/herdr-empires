@@ -80,6 +80,6 @@ herdr-app shot shots/menu.png >/dev/null
 do_ overlay.close
 do_ empires.view_terminals; sleep 3
 herdr-app shot shots/terminals.png >/dev/null
-do_ empires.view_split
+do_ empires.view_map
 say "screenshots in shots/: $(ls shots | tr '\n' ' ')"
 say "inspect every image at full size before sharing any of them (SPEC §15)"

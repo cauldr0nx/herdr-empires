@@ -120,11 +120,12 @@ export default class Resources {
         return openDialog("options", { title: "Options" });
       case "view":
         return cycleView();
-      case "chat": {
+      case "chat":
+      case "chat_pinned": {
         // Talk to the focused unit, else the first one that needs you, else the first unit.
         const list = agents();
         const a = list.find((x) => x.address === (f?.agent ?? f?.terminal)) ?? list.find((x) => x.status === "blocked") ?? list[0];
-        if (a) openUnitChat(a.address, a.program?.name ?? "Unit");
+        if (a) openUnitChat(a.address, a.program?.name ?? "Unit", { pinned: c === "chat_pinned" });
         return;
       }
       case "view_split":
@@ -162,7 +163,7 @@ export default class Resources {
       { label: "&Tech tree (keys)", icon: "techtree", shortcut: "F1", act: { dialog: { kind: "techtree", title: "Tech tree" } } },
       { label: "&Chronicle", icon: "chronicle", act: { dialog: { kind: "chronicle", title: "Chronicle" } } },
       { sep: true },
-      { label: "&View", icon: "expand", sub: [["split", "&Split: world over terminals"], ["map", "&Map: the world only"], ["terminals", "&Terminals: no world"]].map(([m, l]) => ({ label: l, radio: true, checked: viewMode() === m, shortcut: m === "split" ? "Alt+W" : undefined, act: { run: [`empires.view_${m}`, {}] } })) },
+      { label: "&View", icon: "expand", sub: [["map", "&Map: the world only"], ["split", "&Split: world over terminals"], ["terminals", "&Terminals: no world"]].map(([m, l]) => ({ label: l, radio: true, checked: viewMode() === m, shortcut: m === "map" ? "Alt+W cycles" : undefined, act: { run: [`empires.view_${m}`, {}] } })) },
       { label: hudHidden ? "Show &HUD" : "Hide &HUD", icon: "expand", shortcut: "Ctrl+Shift+H", act: { shared: ["empires.hud", hudHidden ? "shown" : "hidden"], run: ["layout.toggle", { id: "hud" }] } },
       { label: "&Mute sounds", icon: "mute", checked: shared("empires.mute") === true, act: { shared: ["empires.mute", shared("empires.mute") !== true] } },
       { label: "Summon the &herald", icon: "herald", checked: shared("empires.herald") !== "off", act: { shared: ["empires.herald", shared("empires.herald") === "off" ? "on" : "off"] } },

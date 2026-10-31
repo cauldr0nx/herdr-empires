@@ -155,7 +155,7 @@ export default class World {
       .tooltip(`${un.name}: ${un.status === "working" ? `gathering ${un.resource}` : un.status === "blocked" ? "under attack: needs you" : un.status === "done" ? "task complete" : "idle"}${un.workers ? ` · ${un.workers} worker${un.workers === 1 ? "" : "s"}` : ""}. Click to talk to it`)
       .on_click((_e, cx) => {
         if (this.wasDrag()) return;
-        openUnitChat(un.address, un.name);
+        openUnitChat(un.address, un.name, { at: this.lastPress ? { x: this.lastPress.x + 14, y: Math.max(0, this.lastPress.y - 60) } : null });
         cx.notify();
       })
       .child(body);
@@ -226,6 +226,7 @@ export default class World {
       })
       // Drag anywhere on the map to move around; the wheel zooms.
       .on_mouse_down("left", (e) => {
+        this.lastPress = { x: Math.round(e.position.x), y: Math.round(e.position.y) };
         this.drag = { sx: e.position.x, sy: e.position.y, px: this.pan.x, py: this.pan.y, moved: false };
       })
       .on_mouse_move((e, cx) => {
@@ -344,7 +345,8 @@ export default class World {
           .flex()
           .gap(u(4))
           .children(
-            [...(pan.x || pan.y || this.wheel !== 1 ? [["center", "Centre"]] : []), ["split", "Split"], ["map", "Map"], ["terminals", "Terminals"]].map(([m, label]) =>
+            // The view buttons live in the top bar (always on screen); here only Centre, once moved.
+            (pan.x || pan.y || this.wheel !== 1 ? [["center", "Centre"]] : []).map(([m, label]) =>
               div()
                 .id(`view-${m}`)
                 .px(u(6))

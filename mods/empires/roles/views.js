@@ -1,5 +1,5 @@
-// The world's view modes (SPEC §18.2): split (the world as a band over the terminals),
-// map (the world fills the field) and terminals (no world). The mod rewrites its own
+// The world's view modes (SPEC §18.2): map (the default: the world fills the field; units'
+// chats open as popups), split (the world as a band over the terminals) and terminals. The mod rewrites its own
 // layout's `field` column through layout.set, the way fitLayout keeps sizes whole; the
 // mode is kept in shared("empires.view") so every copy agrees.
 
@@ -8,7 +8,7 @@ import { nextView, VIEWS } from "../data.js";
 
 export function viewMode() {
   const v = shared("empires.view");
-  return VIEWS.includes(v) ? v : "split";
+  return VIEWS.includes(v) ? v : "map";
 }
 
 function find(n, id) {

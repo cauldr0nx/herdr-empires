@@ -601,8 +601,8 @@ export function entityFallback(entities, name) {
 }
 
 /** The view modes (SPEC §18.2), cycled by empires.view. */
-export const VIEWS = ["split", "map", "terminals"];
+export const VIEWS = ["map", "split", "terminals"];
 export function nextView(v) {
   const i = VIEWS.indexOf(v);
-  return VIEWS[((i < 0 ? 0 : i) + 1) % VIEWS.length]; // unknown counts as the default, split
+  return VIEWS[((i < 0 ? 0 : i) + 1) % VIEWS.length]; // unknown counts as the default, map
 }

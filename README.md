@@ -44,14 +44,17 @@ overwrite any file of the same name that it did not install.
 ## The world (SPEC §18)
 
 - **Views** (the **Map / Split / Terminals** buttons in the top bar, `alt-w`, or
-  Menu → View): **Split** (the world
-  over the terminals), **Map** (the world only), **Terminals** (no world).
+  Menu → View): **Map** (the default: the world only; talk to units through
+  their chat windows), **Split** (the world over the terminals), **Terminals**
+  (no world).
 - **Units**: working agents walk between their tab's building and a resource
   and gather there; blocked agents wait at the town center under a red alert;
   finished ones wear a check until you look; idle ones stand about.
 - **Talk to a unit**: click it and a small chat window opens with its live
-  terminal; type to answer it, click anywhere outside (or ×) to close, **Open**
-  to jump to its pane. `alt-c` does the same for the focused unit (or the first
+  terminal; type to answer it, click anywhere outside (or ×) to close.
+  **Pin** keeps it open as a window you drag by its title bar; **Full** fills
+  the Herdr window (again to restore); **− / +** step its size; **Pane** jumps
+  to the unit's own pane in Terminals view. `alt-c` does the same for the focused unit (or the first
   one that needs you). Click a town center for its space, a building for its tab.
 - **Move around**: drag the map; the scroll wheel zooms; **Centre** returns to
   the current space's town.
@@ -76,6 +79,7 @@ or **Local import**. `tools/install.sh uninstall --purge` also removes local pac
 |---|---|
 | `alt-w` | cycle the world view (split / map / terminals) |
 | `alt-c` | chat with the focused unit (or the first that needs you) |
+| `alt-shift-c` | the same, pinned (a window that stays open) |
 | `alt-.` | next idle or finished unit |
 | `alt-,` | next unit under attack (blocked) |
 | `alt-m` | game menu |
