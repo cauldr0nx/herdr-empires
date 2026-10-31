@@ -1,0 +1,302 @@
+{
+ "name": "zeroad",
+ "title": "0 A.D. (CC BY-SA 3.0)",
+ "license": "CC-BY-SA-3.0",
+ "attribution": "Art derived from 0 A.D. by Wildfire Games (https://www.wildfiregames.com/), CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/)",
+ "source": {
+  "repo": "https://github.com/0ad/0ad",
+  "commit": "0562a8c13982ee979f852004756dd3f16453acc7",
+  "tag": "A26"
+ },
+ "tile": [
+  96,
+  48
+ ],
+ "terrain": {
+  "grass": [
+   "terrain/grass-0.png",
+   "terrain/grass-1.png",
+   "terrain/grass-2.png"
+  ],
+  "dirt": [
+   "terrain/dirt-0.png",
+   "terrain/dirt-1.png"
+  ],
+  "forest_floor": [
+   "terrain/forest-floor-0.png",
+   "terrain/forest-floor-1.png"
+  ],
+  "ground": "terrain/ground.png",
+  "groundSize": [
+   1024,
+   512
+  ]
+ },
+ "playerColors": [
+  "blue",
+  "red",
+  "green",
+  "yellow",
+  "cyan",
+  "purple",
+  "gray",
+  "orange"
+ ],
+ "playerColorValues": {
+  "blue": "#3561d9",
+  "red": "#d23a2f",
+  "green": "#3e9e48",
+  "yellow": "#e2c13a",
+  "cyan": "#3cb3bf",
+  "purple": "#8a4fc2",
+  "gray": "#9b9b9b",
+  "orange": "#e3802c"
+ },
+ "sheetLayout": {
+  "rows": "one row per direction, in dirOrder",
+  "columns": "frames left to right, frame i at x = i * frame[0]",
+  "dirOrder": [
+   "S",
+   "SW",
+   "W",
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE"
+  ],
+  "dirNote": "S faces the viewer (screen-down); then clockwise on screen. Directions are 45-degree steps on the ground plane, so SW/NW/NE/SE run along tile edges.",
+  "anchor": "foot point inside each frame (units) or image (static), in px from the top-left"
+ },
+ "entities": {
+  "villager": {
+   "anchor": [
+    28,
+    54
+   ],
+   "frame": [
+    57,
+    65
+   ],
+   "anims": {
+    "idle": {
+     "fps": 6,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "units/villager-idle-{color}.png"
+    },
+    "walk": {
+     "fps": 12,
+     "dirs": 8,
+     "frames": 12,
+     "sheet": "units/villager-walk-{color}.png"
+    },
+    "gather_wood": {
+     "fps": 10,
+     "dirs": 8,
+     "frames": 12,
+     "sheet": "units/villager-gather-wood-{color}.png"
+    },
+    "gather_gold": {
+     "fps": 10,
+     "dirs": 8,
+     "frames": 12,
+     "sheet": "units/villager-gather-gold-{color}.png"
+    },
+    "carry": {
+     "fps": 12,
+     "dirs": 8,
+     "frames": 12,
+     "sheet": "units/villager-carry-{color}.png"
+    },
+    "build": {
+     "fps": 10,
+     "dirs": 8,
+     "frames": 12,
+     "sheet": "units/villager-build-{color}.png"
+    }
+   },
+   "source": "0 A.D. actor units/celts/female_citizen.xml",
+   "scale_px_per_m": 13.0
+  },
+  "town_center": {
+   "anchor": [
+    225,
+    135
+   ],
+   "size": [
+    458,
+    259
+   ],
+   "source": "Briton civic centre",
+   "scale_px_per_m": 8.6,
+   "image": "buildings/town-center-{color}.png"
+  },
+  "house": {
+   "anchor": [
+    94,
+    62
+   ],
+   "size": [
+    178,
+    116
+   ],
+   "source": "Briton house (two variants)",
+   "scale_px_per_m": 8.6,
+   "image": "buildings/house-0-{color}.png",
+   "variants": [
+    "buildings/house-0-{color}.png",
+    "buildings/house-1-{color}.png"
+   ]
+  },
+  "lumber_camp": {
+   "anchor": [
+    116,
+    148
+   ],
+   "size": [
+    265,
+    211
+   ],
+   "source": "Briton storehouse",
+   "scale_px_per_m": 8.6,
+   "image": "buildings/storehouse-{color}.png"
+  },
+  "mining_camp": {
+   "anchor": [
+    116,
+    148
+   ],
+   "size": [
+    265,
+    211
+   ],
+   "source": "Briton storehouse",
+   "scale_px_per_m": 8.6,
+   "image": "buildings/storehouse-{color}.png"
+  },
+  "mill": {
+   "anchor": [
+    99,
+    111
+   ],
+   "size": [
+    221,
+    160
+   ],
+   "source": "Celtic farmstead",
+   "scale_px_per_m": 8.6,
+   "image": "buildings/farmstead-{color}.png"
+  },
+  "monastery": {
+   "anchor": [
+    161,
+    170
+   ],
+   "size": [
+    359,
+    261
+   ],
+   "source": "Celtic temple",
+   "scale_px_per_m": 8.6,
+   "image": "buildings/temple-{color}.png"
+  },
+  "university": {
+   "anchor": [
+    147,
+    182
+   ],
+   "size": [
+    370,
+    269
+   ],
+   "source": "Briton barracks",
+   "scale_px_per_m": 8.6,
+   "image": "buildings/barracks-{color}.png"
+  },
+  "tree": {
+   "anchor": [
+    103,
+    145
+   ],
+   "size": [
+    246,
+    197
+   ],
+   "scale_px_per_m": 6.5,
+   "source": "flora/trees/oak_new.xml, flora/trees/euro_birch_tree.xml, flora/trees/pine.xml",
+   "variants": [
+    "nature/tree-0.png",
+    "nature/tree-1.png",
+    "nature/tree-2.png"
+   ]
+  },
+  "gold_mine": {
+   "anchor": [
+    83,
+    58
+   ],
+   "size": [
+    175,
+    110
+   ],
+   "scale_px_per_m": 8.6,
+   "source": "geology/metal_temperate_round.xml",
+   "image": "nature/gold-mine.png"
+  },
+  "stone_mine": {
+   "anchor": [
+    135,
+    212
+   ],
+   "size": [
+    303,
+    242
+   ],
+   "scale_px_per_m": 8.6,
+   "source": "geology/stonemine_temperate_quarry.xml",
+   "image": "nature/stone-mine.png"
+  },
+  "berry_bush": {
+   "anchor": [
+    59,
+    67
+   ],
+   "size": [
+    148,
+    105
+   ],
+   "scale_px_per_m": 8.6,
+   "source": "props/flora/berry_bush.xml",
+   "image": "nature/berry-bush.png"
+  },
+  "dirt_patch": {
+   "image": "terrain/dirt-patch-0.png",
+   "variants": [
+    "terrain/dirt-patch-0.png",
+    "terrain/dirt-patch-1.png"
+   ],
+   "size": [
+    400,
+    200
+   ],
+   "anchor": [
+    200,
+    100
+   ],
+   "source": "0 A.D. terrain temp_dirt_gravel_b.png (decal sprite; draw under buildings, below other sprites)"
+  }
+ },
+ "ui": {
+  "portraits": {
+   "villager": "ui/portrait-villager.png",
+   "spearman": "ui/portrait-spearman.png",
+   "swordsman": "ui/portrait-swordsman.png"
+  },
+  "food": "ui/food.png",
+  "wood": "ui/wood.png",
+  "gold": "ui/gold.png",
+  "stone": "ui/stone.png",
+  "population": "ui/pop.png"
+ }
+}
