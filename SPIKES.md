@@ -62,3 +62,17 @@ read from code, not observed on screen; re-verify in the app before release.
   (selection 78 px over a row of command card + minimap; 232 px total) and
   the resource bar drops its labels and shortens the age banner; the width
   comes from the resource bar's `on_size_change` (the window's full width).
+
+## Phase 2 notes (unverified without an `hc` binary)
+
+- `hc run --bg --keep --json --name <n> --cwd <dir> --label herdr.space=<id>
+  --label herdr.tab=<id> --label empires.unit=<type> [--on <machine>] -- <argv…>`
+  is how the Train dialog starts a worker in the current building, then
+  `hc send <address> "<orders>"` delivers the standing orders + the typed
+  task. `hc interrupt <address>` (Stop, Town bell), `terminal.kill` (Disband).
+  The exact `hc run` flags come from SPEC §14.2 and `defaults/AGENTS.md`;
+  confirm them with `hc run --help` on a Herdr machine before relying on
+  the worker path (the visible path uses `tab.new {argv, task}` only).
+- Templates: `~/.config/herdr-core/templates/empires-<unit>.md`; the Train
+  dialog reads the installed file and shows its body in full before sending
+  it (SPEC §14.5: no hidden prompt injection).

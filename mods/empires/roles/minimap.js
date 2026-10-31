@@ -8,9 +8,10 @@
 
 import { div, PathBuilder } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { spaces, agents, focused, run, shared, setAgentOrder } from "herdr";
+import { spaces, agents, terminals, focused, run, shared, setShared, setAgentOrder } from "herdr";
 import { C, STATUS_COLOR, unit, root, stone, button, glyph, own, calm, label } from "../kit.js";
-import { territories, minimapMode, orderAgents, nextIdle, nextBlocked, playerColor } from "../data.js";
+import { territories, minimapMode, orderAgents, nextIdle, nextBlocked, playerColor, toggleSelected, subAgents } from "../data.js";
+import { commandMode } from "./queue.js";
 
 const MAP_W = 196;
 const MAP_H = 98;
@@ -27,6 +28,7 @@ export default class Minimap {
   }
 
   territory(u, t, s, i, order) {
+    const selected = Array.isArray(shared("empires.selected")) ? shared("empires.selected") : [];
     const W = u(MAP_W);
     const H = u(MAP_H);
     const color = playerColor(s.id, i, shared("space.colors"));
@@ -58,6 +60,11 @@ export default class Minimap {
       here.forEach((a, j) => {
         const ax = x + u(-6 + j * 7);
         const ay = y + u(5);
+        const picked = selected.includes(a.address);
+        // A Captain's army: its workers in a small formation beneath it.
+        subAgents(terminals(), a.address).slice(0, 4).forEach((w, k) => {
+          el = el.child(div().absolute().left(ax + u(-3 + k * 3)).top(ay + u(dotSize + 2)).w(u(2.5)).h(u(2.5)).rounded(u(1.25)).bg(STATUS_COLOR[w.status] ?? C.unknown));
+        });
         let dot = own(
           div()
             .id(`mm-${a.address}`)
@@ -69,10 +76,13 @@ export default class Minimap {
             .rounded(u(dotSize / 2))
             .bg(STATUS_COLOR[a.status] ?? C.unknown)
             .border(u(1))
-            .border_color(a.focused ? C.goldBright : C.stone.dark)
-            .tooltip(`${a.program?.name ?? "Unit"} in ${a.space_name} / ${a.tab_name}: ${a.status}. Click to go there`)
-            .on_click((_e, cx) => {
+            .border_color(picked ? C.goldBright : a.focused ? C.goldBright : C.stone.dark)
+            .when(picked, (d) => d.border(u(1.5)))
+            .tooltip(`${a.program?.name ?? "Unit"} in ${a.space_name} / ${a.tab_name}: ${a.status}. Click to go there${commandMode() ? "; shift-click to add to the selection" : ""}`)
+            .on_click((e, cx) => {
               cx.stop_propagation();
+              if (e.modifiers?.shift && commandMode()) return setShared("empires.selected", toggleSelected(shared("empires.selected"), a.address));
+              setShared("empires.selected", []);
               run("agent.focus", { terminal: a.address });
             }),
         );
@@ -94,7 +104,7 @@ export default class Minimap {
           .h(h * 1.4)
           .tooltip(`${s.name}${s.machine ? ` (realm ${s.machine})` : ""}: ${s.tabs.length} building${s.tabs.length === 1 ? "" : "s"}, ${list.length} unit${list.length === 1 ? "" : "s"}. Click to select`)
           .on_click((e) => {
-            if (e.modifiers?.shift) return this.shiftSelect?.(s);
+            if (e.modifiers?.shift && commandMode()) return setShared("empires.selected", list.map((a) => a.address));
             run("space.select", { id: s.id });
           }),
       ),

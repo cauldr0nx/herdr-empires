@@ -334,3 +334,72 @@ export function techTree(keys, section) {
   }
   return [...groups, other].filter((g) => g.items.length);
 }
+
+// ---- Phase 2: the command layer (SPEC §14)
+
+export const UNIT_TYPES = [
+  { key: "villager", name: "Villager", role: "general implementer", glyph: "worker" },
+  { key: "scout", name: "Scout", role: "read-only explorer", glyph: "peek" },
+  { key: "monk", name: "Monk", role: "reviewer", glyph: "chronicle" },
+  { key: "mason", name: "Mason", role: "test / build runner", glyph: "build" },
+  { key: "captain", name: "Captain", role: "lead / orchestrator", glyph: "unit" },
+];
+
+/** The selected units: the explicit multi-selection (addresses still alive), else the focused agent. */
+export function selectedUnits(agents, selection, focusedAddress) {
+  const alive = new Set((agents ?? []).map((a) => a.address));
+  const picked = (Array.isArray(selection) ? selection : []).filter((addr) => alive.has(addr));
+  if (picked.length) return picked;
+  return focusedAddress && alive.has(focusedAddress) ? [focusedAddress] : [];
+}
+
+/** Toggles an address in a multi-selection (shift-click). */
+export function toggleSelected(selection, address) {
+  const list = Array.isArray(selection) ? [...selection] : [];
+  const i = list.indexOf(address);
+  if (i >= 0) list.splice(i, 1);
+  else list.push(address);
+  return list;
+}
+
+/** Control groups by terminal address, pruned to the terminals still alive. */
+export function pruneGroups(groups, terminals) {
+  const alive = new Set((terminals ?? []).filter((t) => t && t.state !== "finished").map((t) => t.address));
+  const out = {};
+  for (const [k, list] of Object.entries(groups && typeof groups === "object" ? groups : {})) {
+    const kept = (Array.isArray(list) ? list : []).filter((a) => alive.has(a));
+    if (kept.length) out[k] = kept;
+  }
+  return out;
+}
+
+export const queueKey = (spaceId) => `empires.queue.${spaceId}`;
+export const rallyKey = (spaceId) => `empires.rally.${spaceId}`;
+export const autoKey = (spaceId) => `empires.autodispatch.${spaceId}`;
+
+/**
+ * Which queued task goes to a unit that just went idle in its town. Never a
+ * blocked unit; only when the town auto-dispatches; a task may name a unit
+ * type (`unit`) and then only matches that type (`agentUnit`, from its label).
+ */
+export function nextDispatch(queue, agent, auto, agentUnit) {
+  if (!auto || !agent || agent.status !== "idle") return null;
+  const list = Array.isArray(queue) ? queue : [];
+  const i = list.findIndex((q) => q && q.task && (!q.unit || !agentUnit || q.unit === agentUnit));
+  return i < 0 ? null : { index: i, task: list[i] };
+}
+
+/** Names the targets of a destructive order, for its confirmation text. */
+export function nameTargets(agents, addresses) {
+  return (addresses ?? [])
+    .map((addr) => {
+      const a = (agents ?? []).find((x) => x.address === addr);
+      return a ? `${a.program?.name ?? "unit"} in ${a.space_name} / ${a.tab_name}` : addr;
+    })
+    .join("\n");
+}
+
+/** A Captain's army: its direct children among the terminals, alive first. */
+export function army(terminals, captainAddress) {
+  return subAgents(terminals, captainAddress);
+}

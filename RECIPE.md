@@ -209,6 +209,12 @@ minimap below). Options offers a 2× HUD scale that doubles every HUD pixel.
   `layout.resize`.
 - Program icons in portraits come from the person's `icons/` folder, not from
   this repository; a program without an icon gets our worker/unit glyph.
+- Phase 2 lives behind `shared("empires.command")` (Options): `roles/orders.js`
+  swaps the command card's slots, `roles/queue.js` keeps the per-town queue
+  and dispatches on idle transitions (from the resources role's tracker),
+  `empires.selected` / `empires.groups` hold the selection and control
+  groups by terminal address. The worker path's `hc run` flags are from
+  the spec and must be confirmed against `hc run --help`.
 - Not done yet: a PowerShell installer (Phase 3); `preview.png` is a mock
   until a Herdr machine takes a screenshot; the Phase 2 token/cost adapters
   are absent (counters hide rather than estimate).

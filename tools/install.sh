@@ -196,6 +196,7 @@ shown_layout() {
 install_templates() {
   tdir="${HERDR_CORE_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/herdr-core}/templates"
   say "Phase 2 unit templates go to $tdir. They are plain markdown instructions; here is each one in full:"
+  say "(__AGENT__ in each 'command:' line becomes the agent program you choose below; no vendor is built in.)"
   for t in "$here"/templates/*.md; do
     [ -f "$t" ] || continue
     echo "----- $(basename "$t") -----"
@@ -206,12 +207,16 @@ install_templates() {
   read -r ans
   case "$ans" in
     y|Y|yes)
+      printf 'install.sh: which agent program should these units run (the command you type to start your agent)? '
+      read -r agent
+      [ -n "$agent" ] || { say "no agent program given; templates not installed"; return 0; }
       mkdir -p "$tdir"
       for t in "$here"/templates/*.md; do
         [ -f "$t" ] || continue
         dst="$tdir/empires-$(basename "$t")"
-        if [ -e "$dst" ] && ! grep -q 'herdr-empires' "$dst"; then say "skipped $dst (not ours)"; else cp "$t" "$dst" && say "wrote $dst"; fi
-      done ;;
+        if [ -e "$dst" ] && ! grep -q 'herdr-empires' "$dst"; then say "skipped $dst (not ours)"; else sed "s|__AGENT__|$agent|" "$t" > "$dst" && say "wrote $dst"; fi
+      done
+      say "verify with: hc templates" ;;
     *) say "templates not installed" ;;
   esac
 }

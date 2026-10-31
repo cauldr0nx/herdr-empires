@@ -8,7 +8,8 @@ import { div, image } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { spaces, agents, terminals, focused, run, shared, setShared, nextCommand, settings, window as appWindow, exec } from "herdr";
 import { C, ASSETS, FONT_SC, unit, root, plank, heading, button, own, fitLayout, openMenu, openDialog, sfx, glyph, calm, label } from "../kit.js";
-import { clock, resourceCounts, ageFor, transitions, completions, orderAgents, nextIdle, nextBlocked, isNarrow } from "../data.js";
+import { clock, resourceCounts, ageFor, transitions, completions, orderAgents, nextIdle, nextBlocked, isNarrow, pruneGroups, selectedUnits } from "../data.js";
+import { onIdle, commandMode } from "./queue.js";
 
 const RESOURCE_ICON = { food: "food", wood: "wood", gold: "gold", stone: "stone", population: "population" };
 const CHRONICLE_MAX = 500;
@@ -107,12 +108,31 @@ export default class Resources {
         return run("layout.toggle", { id: "hud" });
       case "techtree":
         return openDialog("techtree", { title: "Tech tree" });
-      case "options":
-        return openDialog("options", { title: "Options" });
       case "chronicle":
         return openDialog("chronicle", { title: "Chronicle" });
       case "boot":
         return this.boot(true);
+      case "options":
+        return openDialog("options", { title: "Options" });
+    }
+    // Control groups (SPEC §14.4): ctrl-shift-<digit> assigns the selection, alt-shift-<digit> selects it.
+    const set = /^group_set_(\d)$/.exec(c);
+    const get = /^group_(\d)$/.exec(c);
+    if ((set || get) && commandMode()) {
+      const groups = pruneGroups(shared("empires.groups"), terminals());
+      if (set) {
+        const sel = selectedUnits(agents(), shared("empires.selected"), f?.agent ?? f?.terminal ?? null);
+        if (!sel.length) return;
+        groups[set[1]] = sel;
+        setShared("empires.groups", groups);
+        sfx("select");
+      } else {
+        const g = groups[get[1]];
+        setShared("empires.groups", groups);
+        if (!g?.length) return;
+        setShared("empires.selected", g);
+        run("agent.focus", { terminal: g[0] });
+      }
     }
   }
 
@@ -171,6 +191,13 @@ export default class Resources {
       if (shared("empires.alerts") === true) {
         if (changes.some((c) => c.to === "blocked")) sfx("bell");
         else if (changes.some((c) => c.to === "done")) sfx("done");
+      }
+      // Phase 2: a unit that went idle may take the next queued order of its town.
+      if (commandMode()) {
+        for (const c of changes.filter((x) => x.to === "idle")) {
+          const agent = list.find((a) => a.address === c.address);
+          if (agent) await onIdle(agent).catch((e) => console.log(`empires: dispatch: ${e}`));
+        }
       }
     });
   }

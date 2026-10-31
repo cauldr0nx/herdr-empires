@@ -328,6 +328,25 @@ for (const platform of ["macos", "windows"] as const) {
 herdr.log.shared["empires.hud"] = "hidden";
 await renderRole("resources (demo, HUD hidden)", roles.get("resources") ?? { role: "resources" }, demo, null);
 delete herdr.log.shared["empires.hud"];
+// Phase 2: the command layer on, two units selected, a queue with orders, a control group.
+herdr.log.shared["empires.command"] = true;
+herdr.log.shared["empires.selected"] = ["t1", "t3"];
+herdr.log.shared["empires.queue.s1"] = [{ task: "run the tests", unit: null, addedAt: now }, { task: "review the diff", unit: "monk", addedAt: now }];
+herdr.log.shared["empires.autodispatch.s1"] = true;
+herdr.log.shared["empires.groups"] = { 1: ["t1", "t3"] };
+seenOverlay.clear();
+for (const role of ["resources", "command", "selection", "minimap", "banner"]) {
+  const p = { ...(roles.get(role) ?? { role }) }; delete p.float;
+  await renderRole(`${role} (demo, command layer, 2 selected)`, p, demo, null);
+}
+guard = 0;
+while (overlayQueue.length && guard++ < 200) {
+  const o = overlayQueue.shift()!;
+  await renderRole(o.label, o.props, demo, null);
+}
+herdr.log.shared["empires.selected"] = [];
+await renderRole("selection (demo, command layer, focused only)", roles.get("selection") ?? { role: "selection" }, demo, null);
+delete herdr.log.shared["empires.command"];
 
 rmSync(work, { recursive: true, force: true });
 

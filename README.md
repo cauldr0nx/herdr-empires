@@ -83,12 +83,29 @@ agents).
 ## Phase 2: the command layer
 
 Off by default (Options → Command layer). Turns the command card into unit
-orders on top of herdr-core: train units from templates, send messages, stop,
-town bell, garrison, peek, disband, control groups and a production queue per
-town. Every destructive or multi-unit order confirms and names its targets;
-messages to agents are what you typed; nothing leaves the machine.
-`tools/install.sh install --templates` shows each unit template in full and
-asks before installing it.
+orders on top of herdr-core (`hc`):
+
+| Order | Does |
+|---|---|
+| Train | unit type (Villager, Scout, Monk, Mason, Captain) + agent program + orders + town; a new building (`tab.new`) or a worker in the current one (`hc run` with labels). The installed template's standing orders are shown in full and sent first. |
+| Rally point | per town: the town's folder, or a new worktree per unit |
+| Send message | `hc send` exactly what you typed to the selected units |
+| Stop / Town bell | `hc interrupt` the selected units / every working unit in the town (confirms, names them) |
+| Garrison / Ungarrison | `tab.settle` / `tab.unsettle` |
+| Peek | `terminal.peek` a worker of the selected unit |
+| Disband | `terminal.kill` (always confirms, names the units) |
+| Queue | the town's production queue; auto-dispatch per town sends the next order when a unit goes idle, never to a blocked one; otherwise the herald asks |
+
+Selection: click a unit; shift-click dots on the minimap or buildings in the
+town overview to multi-select; `ctrl-shift-<digit>` assigns a control group,
+`alt-shift-<digit>` selects it (groups are pruned when units end). A
+Captain's workers show as a formation under it on the minimap and as
+portraits in its card. Every destructive or multi-unit order confirms and
+names its targets; messages to agents are what you typed or a template you
+read; nothing leaves the machine. `tools/install.sh install --templates`
+prints each unit template in full, asks which agent program they run, and
+asks before installing. Token/cost counters are not shown: no reliable local
+source exists yet, and the theme never estimates.
 
 ## License
 

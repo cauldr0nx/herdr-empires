@@ -6,6 +6,24 @@
     "alt-t": "empires.train",
     "alt-g": "empires.garrison",
     "ctrl-shift-h": "empires.toggle_hud",
-    "f1": "empires.techtree"
+    "f1": "empires.techtree",
+    "ctrl-shift-1": "empires.group_set_1",
+    "alt-shift-1": "empires.group_1",
+    "ctrl-shift-2": "empires.group_set_2",
+    "alt-shift-2": "empires.group_2",
+    "ctrl-shift-3": "empires.group_set_3",
+    "alt-shift-3": "empires.group_3",
+    "ctrl-shift-4": "empires.group_set_4",
+    "alt-shift-4": "empires.group_4",
+    "ctrl-shift-5": "empires.group_set_5",
+    "alt-shift-5": "empires.group_5",
+    "ctrl-shift-6": "empires.group_set_6",
+    "alt-shift-6": "empires.group_6",
+    "ctrl-shift-7": "empires.group_set_7",
+    "alt-shift-7": "empires.group_7",
+    "ctrl-shift-8": "empires.group_set_8",
+    "alt-shift-8": "empires.group_8",
+    "ctrl-shift-9": "empires.group_set_9",
+    "alt-shift-9": "empires.group_9"
   }
 }

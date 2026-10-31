@@ -219,3 +219,33 @@ describe("tech tree", () => {
     expect(tree.map((g) => g.name)).toEqual(["Architecture", "Military", "Empires"]);
   });
 });
+
+describe("phase 2: command layer", () => {
+  const agents = [
+    { address: "a", status: "idle", program: { name: "Claude Code" }, space_name: "demo-api", tab_name: "1" },
+    { address: "b", status: "blocked", program: { name: "Codex" }, space_name: "demo-api", tab_name: "2" },
+  ];
+  test("selection falls back to the focused agent and drops dead addresses", () => {
+    expect(D.selectedUnits(agents, [], "a")).toEqual(["a"]);
+    expect(D.selectedUnits(agents, ["b", "zz"], "a")).toEqual(["b"]);
+    expect(D.selectedUnits(agents, null, "nope")).toEqual([]);
+    expect(D.toggleSelected(["a"], "b")).toEqual(["a", "b"]);
+    expect(D.toggleSelected(["a", "b"], "a")).toEqual(["b"]);
+  });
+  test("control groups are pruned when units end", () => {
+    const terminals = [{ address: "a", state: "running" }, { address: "b", state: "finished" }];
+    expect(D.pruneGroups({ 1: ["a", "b"], 2: ["b"], 3: "junk" }, terminals)).toEqual({ 1: ["a"] });
+  });
+  test("auto-dispatch never targets a blocked unit and respects unit types", () => {
+    const queue = [{ task: "review the diff", unit: "monk" }, { task: "run the tests" }];
+    expect(D.nextDispatch(queue, agents[1], true, null)).toBe(null);
+    expect(D.nextDispatch(queue, agents[0], false, null)).toBe(null);
+    expect(D.nextDispatch(queue, agents[0], true, "villager")).toMatchObject({ index: 1 });
+    expect(D.nextDispatch(queue, agents[0], true, "monk")).toMatchObject({ index: 0 });
+    expect(D.nextDispatch(queue, agents[0], true, null)).toMatchObject({ index: 0 });
+  });
+  test("confirmations name their targets", () => {
+    expect(D.nameTargets(agents, ["a", "b"])).toBe("Claude Code in demo-api / 1\nCodex in demo-api / 2");
+    expect(D.nameTargets(agents, ["x"])).toBe("x");
+  });
+});

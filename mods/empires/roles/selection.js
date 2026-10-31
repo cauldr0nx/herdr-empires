@@ -5,10 +5,10 @@
 
 import { div, image } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { spaces, panes, terminals, focused, run, home, shared } from "herdr";
+import { spaces, panes, terminals, focused, run, home, shared, setShared, agents } from "herdr";
 import { C, ASSETS, FONT_SC, unit, root, stone, heading, programIcon, statusBar, statusBadge, label, own, glyph } from "../kit.js";
-import { unitName, placeName, tabPosition, subAgents, isAgentPane, elapsed, playerColor } from "../data.js";
-import { queueLine } from "./queue.js";
+import { unitName, placeName, tabPosition, subAgents, isAgentPane, elapsed, playerColor, selectedUnits, nameTargets, toggleSelected } from "../data.js";
+import { queueLine, commandMode } from "./queue.js";
 
 const BUILDING = (t) => (t.status === "blocked" ? "tower" : t.settled ? "garrison" : "house");
 
@@ -91,8 +91,15 @@ export default class Selection {
           .gap(u(2))
           .rounded(u(2))
           .hover((s) => s.bg("#ffffff14"))
-          .tooltip(`${t.name}${t.status ? ` (${t.status})` : ""}${t.settled ? ", garrisoned" : ""}: click to select`)
-          .on_click(() => run("tab.select", { id: t.id }))
+          .tooltip(`${t.name}${t.status ? ` (${t.status})` : ""}${t.settled ? ", garrisoned" : ""}: click to select${commandMode() ? "; shift-click to add its units to the selection" : ""}`)
+          .on_click((e) => {
+            if (e.modifiers?.shift && commandMode()) {
+              let sel = shared("empires.selected");
+              for (const a of agents().filter((a) => a.tab === t.id)) sel = toggleSelected(sel, a.address);
+              return setShared("empires.selected", sel);
+            }
+            run("tab.select", { id: t.id });
+          })
           .child(div().relative().child(image(`${ASSETS}/img/${BUILDING(t)}.svg`).flex_none().w(u(32)).h(u(32))).when(Boolean(badge), (el) => el.child(div().absolute().right(u(-4)).top(u(-4)).child(badge))))
           .child(div().max_w(u(52)).truncate().text_size(u(11)).text_color(t.active ? C.goldBright : C.text).child(t.name)),
       );
@@ -116,13 +123,52 @@ export default class Selection {
       .child(queueLine(u, space));
   }
 
+  /** Several units selected (Phase 2): the army card. */
+  armyCard(u, sel) {
+    const list = agents().filter((a) => sel.includes(a.address));
+    return v_flex()
+      .size_full()
+      .px(u(10))
+      .py(u(6))
+      .gap(u(4))
+      .child(h_flex().items_center().gap(u(6)).child(heading(u, `${list.length} units selected`, { size: 13 })).child(div().flex_1()).child(own(div().id("sel-clear").text_size(u(11)).text_color(C.textDim).hover((s) => s.text_color(C.goldBright)).on_click(() => setShared("empires.selected", [])).child("clear (click a unit)"))))
+      .child(
+        h_flex()
+          .flex_wrap()
+          .gap(u(4))
+          .children(
+            list.map((a) =>
+              own(
+                h_flex()
+                  .id(`sel-${a.address}`)
+                  .items_center()
+                  .gap(u(4))
+                  .px(u(4))
+                  .h(u(22))
+                  .rounded(u(2))
+                  .border(u(1))
+                  .border_color(C.gold)
+                  .tooltip(`${a.program?.name ?? "Unit"} in ${a.space_name} / ${a.tab_name}: ${a.status}. Click to go there`)
+                  .on_click(() => run("agent.focus", { terminal: a.address }))
+                  .child(programIcon(u, a.program, 16))
+                  .child(div().text_size(u(11)).text_color(C.text).child(`${a.space_name}/${a.tab_name}`))
+                  .when(Boolean(statusBadge(u, a.status, 10)), (el) => el.child(statusBadge(u, a.status, 10))),
+              ),
+            ),
+          ),
+      )
+      .child(div().text_size(u(11)).text_color(C.textDim).child("Orders on the command card apply to all of them: Send, Stop, Disband (each confirms and names them)."));
+  }
+
   render(_cx) {
     const u = unit();
     const f = focused();
     const p = f?.pane ? panes().find((x) => x.pane === f.pane) : null;
     const all = spaces();
     let body;
-    if (p && !p.mod) {
+    const sel = commandMode() ? selectedUnits(agents(), shared("empires.selected"), null) : [];
+    if (sel.length > 1) body = this.armyCard(u, sel);
+    else if (p && !p.mod) {
       const i = all.findIndex((s) => s.tabs.some((t) => t.id === p.tab));
       const town = i < 0 ? null : { space: all[i], index: i, tab: all[i].tabs.find((t) => t.id === p.tab) };
       body = this.unitCard(u, p, town);

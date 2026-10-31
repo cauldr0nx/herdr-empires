@@ -7,7 +7,7 @@
 
 import { div, svg, image, PathBuilder, Background } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { settings, shared, setShared, playSound, run, layout, openOverlay, closeOverlay, exec, window as appWindow } from "herdr";
+import { settings, shared, setShared, playSound, run, layout, openOverlay, closeOverlay, exec, hc, window as appWindow } from "herdr";
 
 // ---- palette (SPEC §4.1)
 
@@ -373,7 +373,7 @@ export function openMenu(items, at, o = {}) {
   });
 }
 
-const DIALOG_W = { prompt: 360, confirm: 360, about: 420, options: 460, techtree: 520, chronicle: 520, train: 420, message: 360, send: 420 };
+const DIALOG_W = { prompt: 360, confirm: 360, about: 420, options: 460, techtree: 520, chronicle: 520, train: 460, message: 360, send: 420, queue: 460 };
 
 /** Opens a parchment dialog (the dialog role): kind and its props. Full-window screens use `screen`. */
 export function openDialog(kind, p = {}) {
@@ -395,11 +395,17 @@ export function openDialog(kind, p = {}) {
   });
 }
 
-/** Does what a menu item or button says: { run, dialog, shared, sound, url, menu }. */
+/**
+ * Does what a menu item or button says: { run: [cmd, args], runEach: [cmd, [args...]],
+ * hcEach: [subcommand, [address...]] (one `hc <subcommand> <address>` per unit),
+ * dialog, shared, sound, url }.
+ */
 export function perform(act) {
   if (!act) return;
   if (act.sound) sfx(act.sound);
   if (act.run) run(act.run[0], act.run[1] ?? {});
+  if (act.runEach) for (const args of act.runEach[1] ?? []) run(act.runEach[0], args ?? {});
+  if (act.hcEach) for (const address of act.hcEach[1] ?? []) hc([act.hcEach[0], address]).catch((e) => console.log(`empires: hc ${act.hcEach[0]} ${address}: ${e}`));
   if (act.dialog) openDialog(act.dialog.kind, act.dialog);
   if (act.shared) setShared(act.shared[0], act.shared[1]);
   if (act.url) {
