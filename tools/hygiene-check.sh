@@ -53,7 +53,7 @@ scan() { # scan <label> <grep -E pattern> [exclude-pattern]
 # home prefix; everything else is a leak.
 scan "absolute home path" '(/home/[A-Za-z0-9._-]+|/Users/[A-Za-z0-9._-]+|[A-Za-z]:\\\\Users\\\\[A-Za-z0-9._-]+)' '(/home/<user>|/Users/<user>|Users\\\\<user>|hygiene-check\.sh)'
 # Email addresses, except the commit-trailer allow-list.
-scan "email address" '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' '(noreply@anthropic\.com|users\.noreply\.github\.com|hygiene-check\.sh|@media|@font-face|@import|@2x|@1x)'
+scan "email address" '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' '(noreply@anthropic\.com|users\.noreply\.github\.com|@example\.invalid|hygiene-check\.sh|@media|@font-face|@import|@2x|@1x)'
 # IPv4 addresses (version numbers like 0.1.10 have only three parts; SVG viewBox digits are space-separated).
 scan "IPv4 address" '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' '(hygiene-check\.sh|0\.0\.0\.0|127\.0\.0\.1)'
 # Private keys and tokens.

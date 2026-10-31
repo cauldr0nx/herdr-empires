@@ -339,3 +339,49 @@ describe("world model (SPEC §18.3)", () => {
     expect(D.nextView(undefined)).toBe("split"); // unknown counts as map, the default
   });
 });
+
+describe("growing towns on a static map", () => {
+  test("levels grow with commits, age and work, and stay in range", () => {
+    expect(D.townLevel({})).toBe(0);
+    expect(D.townLevel({ commits: 50 })).toBeGreaterThan(D.townLevel({ commits: 2 }));
+    expect(D.townLevel({ commits: 5000, ageDays: 900, completed: 500 })).toBe(9);
+    expect(D.townLevel({ commits: 200, ageDays: 60 })).toBeGreaterThanOrEqual(D.townLevel({ commits: 200 }));
+  });
+
+  test("extras accumulate by level and differ per town", () => {
+    expect(D.townExtras(1, 0).length).toBe(1);
+    expect(D.townExtras(1, 3).length).toBeGreaterThan(D.townExtras(1, 1).length);
+    expect(JSON.stringify(D.townExtras(1, 4))).not.toBe(JSON.stringify(D.townExtras(2, 4)));
+    expect(D.townExtras(7, 9).some((e) => e.kind === "wonder")).toBe(true);
+  });
+
+  test("slots are stable: new spaces take the smallest free slot", () => {
+    const a = D.assignSlots(["x", "y"]);
+    expect(a).toEqual({ x: 0, y: 1 });
+    const b = D.assignSlots(["y", "z"], { y: 1 });
+    expect(b).toEqual({ y: 1, z: 0 });
+  });
+
+  test("the shown space doesn't move towns; overrides do", () => {
+    const sp = (active) => [
+      { id: "a", name: "a", active: active === "a", tabs: [{ id: "t1" }] },
+      { id: "b", name: "b", active: active === "b", tabs: [{ id: "t2" }] },
+    ];
+    const slots = { a: 0, b: 1 };
+    const w1 = D.worldModel({ spaces: sp("a"), slots });
+    const w2 = D.worldModel({ spaces: sp("b"), slots });
+    const pos = (w, id) => w.towns.find((t) => t.space === id);
+    expect([pos(w1, "b").x, pos(w1, "b").y]).toEqual([pos(w2, "b").x, pos(w2, "b").y]);
+    const w3 = D.worldModel({ spaces: sp("a"), slots, buildingPos: { t1: { x: 10, y: 20 } }, kinds: { t1: "fortress" }, townPos: { b: { x: 5000, y: 0 } } });
+    expect(pos(w3, "a").buildings[0]).toMatchObject({ x: 10, y: 20, kind: "fortress", custom: true });
+    expect(pos(w3, "b").x).toBe(5000);
+  });
+
+  test("units get a stable look from the pack's looks", () => {
+    const sp = [{ id: "a", name: "a", active: true, tabs: [{ id: "t1" }] }];
+    const ag = [{ address: "t9", space: "a", tab: "t1", status: "idle" }];
+    const w = D.worldModel({ spaces: sp, agents: ag, looks: ["villager", "villager_b", "villager_c"] });
+    expect(["villager", "villager_b", "villager_c"]).toContain(w.units[0].look);
+    expect(D.worldModel({ spaces: sp, agents: ag, looks: ["villager", "villager_b", "villager_c"] }).units[0].look).toBe(w.units[0].look);
+  });
+});

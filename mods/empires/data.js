@@ -464,11 +464,86 @@ export function dirRow(dir, dirs, order = DIRS) {
 }
 
 /** Building kind for a tab: settled tabs are houses, shell-only tabs houses, agent tabs a workshop. */
-export function buildingKind(tab, agentsInTab) {
+export function buildingKind(tab, agentsInTab, level = 3) {
   if (!tab) return "house";
   if (tab.settled || !agentsInTab.length) return "house";
-  const kinds = ["lumber_camp", "mining_camp", "mill", "university", "monastery"];
+  // Workshops unlock with the town's level, so a young town's tabs are humble buildings.
+  const kinds = ["lumber_camp", "mining_camp", "mill", ...(level >= 4 ? ["market", "blacksmith"] : []), ...(level >= 6 ? ["university", "monastery"] : [])];
   return kinds[hashStr(tab.id) % kinds.length];
+}
+
+/** Every building type the pack can draw, for the right-click "Change type" menu. */
+export const BUILDING_KINDS = ["house", "lumber_camp", "mining_camp", "mill", "market", "blacksmith", "university", "monastery", "defense_tower", "sentry_tower", "corral", "fortress", "wonder"];
+
+/**
+ * A town's level, 0..9, from what its repo and its history say: commits (log-scaled, so a
+ * big repo is a big town without a 10k-commit repo being absurd), the repo's (or the town's)
+ * age in days, and tasks completed there. Cosmetic, deterministic, and only ever grows with
+ * real work.
+ */
+export function townLevel(stats = {}) {
+  const commits = Math.max(0, Number(stats.commits) || 0);
+  const days = Math.max(0, Number(stats.ageDays) || 0);
+  const done = Math.max(0, Number(stats.completed) || 0);
+  const score = Math.log2(commits + 1) * 0.9 + Math.sqrt(days) * 0.6 + Math.sqrt(done) * 0.8;
+  return Math.max(0, Math.min(9, Math.floor(score / 1.6)));
+}
+
+/** What each level adds around the town center, cumulatively (a base that grows like a classic RTS town). */
+export const LEVEL_GROWTH = [
+  ["house"],
+  ["field", "house"],
+  ["mill", "field"],
+  ["lumber_camp", "house", "palisade"],
+  ["market", "house"],
+  ["blacksmith", "defense_tower", "field"],
+  ["sentry_tower", "corral", "house"],
+  ["university", "monastery", "palisade"],
+  ["fortress", "defense_tower"],
+  ["wonder"],
+];
+
+/**
+ * The town's grown buildings (decor, not tabs) for a level: kinds from LEVEL_GROWTH, placed
+ * on outer rings seeded by the space, so no two towns look alike. Positions are relative to
+ * the town center, world px; `taken` are the tab buildings' spots to keep clear of.
+ */
+export function townExtras(seed, level, taken = []) {
+  const r = seeded(seed ^ 0x9e3779b9);
+  const kinds = LEVEL_GROWTH.slice(0, Math.max(0, level) + 1).flat();
+  const out = [];
+  const spots = [...taken];
+  kinds.forEach((kind, i) => {
+    let best = null;
+    for (let tries = 0; tries < 24; tries++) {
+      const a = r() * Math.PI * 2;
+      const rad = 300 + Math.floor(i / 6) * 110 + r() * 120 + tries * 12;
+      const p = { x: Math.round(Math.cos(a) * rad), y: Math.round(Math.sin(a) * rad * 0.5) + 20 };
+      const clear = spots.every((q) => Math.hypot(p.x - q.x, (p.y - q.y) * 2) > 160);
+      if (clear) {
+        best = p;
+        break;
+      }
+      best ??= p;
+    }
+    spots.push(best);
+    out.push({ kind, x: best.x, y: best.y, id: `${seed}:${i}` });
+  });
+  return out;
+}
+
+/** The smallest free town slot for each space (stable map positions); returns the new map. */
+export function assignSlots(spaceIds, slots = {}) {
+  const out = { ...slots };
+  const used = new Set(Object.values(out));
+  for (const id of spaceIds) {
+    if (out[id] !== undefined) continue;
+    let k = 0;
+    while (used.has(k)) k++;
+    out[id] = k;
+    used.add(k);
+  }
+  return out;
 }
 
 /** The resource a tab's units gather: stable per tab. */
@@ -520,7 +595,7 @@ export function townSites(seed, buildings) {
  * agent), in world px. `activeSpace` goes to the origin. Units carry what the renderer needs:
  * where they live, where they go, their status and colour slot. Caps per SPEC §18.3.
  */
-export function worldModel({ spaces = [], agents = [], terminals = [], colors = null, maxUnits = 60, maxBuildings = 40 } = {}) {
+export function worldModel({ spaces = [], agents = [], terminals = [], colors = null, maxUnits = 60, maxBuildings = 40, slots = null, townPos = {}, buildingPos = {}, kinds = {}, stats = {}, looks = ["villager"] } = {}) {
   const active = spaces.findIndex((s) => s.active);
   const order = active > 0 ? [spaces[active], ...spaces.filter((_, i) => i !== active)] : spaces.slice();
   const towns = [];
@@ -528,17 +603,21 @@ export function worldModel({ spaces = [], agents = [], terminals = [], colors = 
   let buildingCount = 0;
   order.forEach((s, k) => {
     const index = spaces.indexOf(s);
-    const origin = townOrigin(k);
+    // Static map: a town keeps its slot (and any spot it was moved to) whatever is shown.
+    const slot = slots && slots[s.id] !== undefined ? slots[s.id] : k;
+    const origin = townPos[s.id] ? { x: townPos[s.id].x, y: townPos[s.id].y } : townOrigin(slot);
+    const level = townLevel(stats[s.id]);
     const tabs = (s.tabs ?? []).slice(0, Math.max(0, maxBuildings - buildingCount));
     buildingCount += tabs.length;
     const sites = townSites(hashStr(s.id), tabs.length);
     const mine = agents.filter((a) => a.space === s.id);
     const buildings = tabs.map((t, i) => {
       const inTab = mine.filter((a) => a.tab === t.id);
-      return { tab: t.id, name: t.name, kind: buildingKind(t, inTab), settled: Boolean(t.settled), status: t.status ?? null, x: origin.x + sites.buildings[i].x, y: origin.y + sites.buildings[i].y };
+      const at = buildingPos[t.id] ?? sites.buildings[i];
+      return { tab: t.id, name: t.name, kind: kinds[t.id] ?? buildingKind(t, inTab, level), custom: Boolean(kinds[t.id]), settled: Boolean(t.settled), status: t.status ?? null, x: origin.x + at.x, y: origin.y + at.y };
     });
     const color = playerColor(s.id, index, colors);
-    const town = { space: s.id, name: s.name, active: Boolean(s.active), remote: Boolean(s.machine), color, slot: colorSlot(s.id, index, colors), x: origin.x, y: origin.y, buildings, forest: sites.forest.map((f) => ({ ...f, x: origin.x + f.x, y: origin.y + f.y })), nodes: Object.fromEntries(Object.entries(sites.nodes).map(([k2, p]) => [k2, { x: origin.x + p.x, y: origin.y + p.y }])), hidden: 0 };
+    const town = { space: s.id, name: s.name, active: Boolean(s.active), remote: Boolean(s.machine), color, slot: colorSlot(s.id, index, colors), level, stats: stats[s.id] ?? null, x: origin.x, y: origin.y, buildings, extras: townExtras(hashStr(s.id), level, [...buildings.map((b) => ({ x: b.x - origin.x, y: b.y - origin.y })), ...sites.forest, ...Object.values(sites.nodes)]).map((e) => ({ ...e, x: origin.x + e.x, y: origin.y + e.y })), forest: sites.forest.map((f) => ({ ...f, x: origin.x + f.x, y: origin.y + f.y })), nodes: Object.fromEntries(Object.entries(sites.nodes).map(([k2, p]) => [k2, { x: origin.x + p.x, y: origin.y + p.y }])), hidden: 0 };
     towns.push(town);
     mine.forEach((a, i) => {
       const b = buildings.find((x) => x.tab === a.tab);
@@ -553,7 +632,8 @@ export function worldModel({ spaces = [], agents = [], terminals = [], colors = 
       // Waiting spots in front of the town center: a row of five, then a second row, so alerts never stack.
       const door = { x: origin.x - 70 + (i % 5) * 36, y: origin.y + 92 + Math.floor((i % 10) / 5) * 30 };
       const subs = terminals.filter((t) => t.parent === a.address).length;
-      units.push({ address: a.address, status: a.status, town: s.id, slot: town.slot, color, focused: Boolean(a.focused), name: a.program?.name ?? a.app ?? "Unit", tab: a.tab, home: b ? { x: b.x, y: b.y + 40 } : door, node: town.nodes[res], resource: res, idle, door, workers: subs });
+      const look = looks.length ? looks[hashStr(`look:${a.address}`) % looks.length] : "villager";
+      units.push({ address: a.address, look, scale: 0.92 + (hashStr(`size:${a.address}`) % 15) / 100, status: a.status, town: s.id, slot: town.slot, color, focused: Boolean(a.focused), name: a.program?.name ?? a.app ?? "Unit", tab: a.tab, home: b ? { x: b.x, y: b.y + 40 } : door, node: town.nodes[res], resource: res, idle, door, workers: subs });
     });
   });
   return { towns, units };
@@ -595,7 +675,22 @@ export function animFallback(anims, name) {
 
 /** Resolves an entity through fallbacks (SPEC §18.4). */
 export function entityFallback(entities, name) {
-  const chain = { university: ["university", "monastery", "house"], monastery: ["monastery", "university", "house"], mill: ["mill", "house"], lumber_camp: ["lumber_camp", "mining_camp", "house"], mining_camp: ["mining_camp", "lumber_camp", "house"], stone_mine: ["stone_mine", "gold_mine"], berry_bush: ["berry_bush", "tree"] }[name] ?? [name];
+  const chain = {
+    university: ["university", "monastery", "house"],
+    monastery: ["monastery", "university", "house"],
+    mill: ["mill", "house"],
+    lumber_camp: ["lumber_camp", "mining_camp", "house"],
+    mining_camp: ["mining_camp", "lumber_camp", "house"],
+    market: ["market", "mill", "house"],
+    blacksmith: ["blacksmith", "lumber_camp", "house"],
+    defense_tower: ["defense_tower", "sentry_tower"],
+    sentry_tower: ["sentry_tower", "defense_tower"],
+    corral: ["corral", "mill"],
+    fortress: ["fortress", "university", "monastery"],
+    wonder: ["wonder", "fortress", "monastery"],
+    stone_mine: ["stone_mine", "gold_mine"],
+    berry_bush: ["berry_bush", "tree"],
+  }[name] ?? [name];
   for (const n of chain) if (entities?.[n]) return n;
   return null;
 }

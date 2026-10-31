@@ -1,20 +1,21 @@
 // The world (SPEC §18): an isometric RTS map of Herdr's live state, drawn from an art pack.
-// Each space is a town (a town center in its player colour, one building per tab), each
-// agent a unit: working units walk between their building and a resource node, gather there
-// and carry the load back; blocked units wait at the town center under a red alert; finished
-// units wear a laurel until seen; idle ones stand about. Click a unit to focus its terminal,
-// double-click to open it full size; click a town center to show that space, a building to
-// show its tab.
+// Each space is a town with a fixed place on the map (its own slot, or wherever it was moved):
+// a town center in its player colour, one building per tab, and grown buildings that come
+// with the town's level (repo commits, repo age, tasks done). Each agent is a unit with its
+// own look: working units walk between their building and a resource and gather there;
+// blocked ones wait at the town center with a "?" bubble; finished ones show a "✓" bubble
+// until seen; idle ones stand about. Click a unit to talk to it (a chat window); right-click
+// a town center or building to train units, move it, or change what it is.
 //
 // Motion is native: a working unit's position runs on paired left/top loops (there and back,
 // ease-in-out, so it lingers at both ends). Sprite frames are the one thing gpui-shell can't
-// animate natively for images (SPIKES R11), so a frame tick redraws this copy at most 8 times
+// animate natively for images (SPIKES R11), so a frame tick redraws this copy at most 6 times
 // a second, and only while the world is shown, the window is active and something moves.
 
-import { div, image } from "gpui-kit";
-import { spaces, agents, terminals, shared, setShared, run, readTextFile, appHome, knownAgents, window as appWindow } from "herdr";
-import { C, FONT_SC, DISPLAY, ASSETS, unit, root, own, calm, glyph, openMenu, openDialog } from "../kit.js";
-import { worldModel, tripState, dirRow, animFallback, entityFallback, hashStr, seeded } from "../data.js";
+import { div, image, PathBuilder } from "gpui-kit";
+import { spaces, agents, terminals, panes, shared, setShared, run, readTextFile, appHome, knownAgents, exec, window as appWindow } from "herdr";
+import { C, FONT_SC, DISPLAY, ASSETS, unit, root, calm, openMenu } from "../kit.js";
+import { worldModel, tripState, dirRow, animFallback, entityFallback, hashStr, assignSlots, BUILDING_KINDS } from "../data.js";
 import { setView, viewMode } from "./views.js";
 import { openUnitChat } from "./chat.js";
 
@@ -22,6 +23,8 @@ const SHIPPED = `${ASSETS}/packs/zeroad`;
 const LOCAL = "empires-packs/local";
 const FPS_CAP = 6;
 const SPEED = 55; // world px per second, walking
+const STATS_EVERY = 10 * 60 * 1000; // repo stats (commits, age): gently
+const KIND_LABEL = { house: "House", lumber_camp: "Lumber camp", mining_camp: "Mining camp", mill: "Mill", market: "Market", blacksmith: "Blacksmith", university: "University", monastery: "Monastery", defense_tower: "Defense tower", sentry_tower: "Sentry tower", corral: "Corral", fortress: "Fortress", wonder: "Wonder" };
 
 /** Loads the chosen art pack: { base, data } or null. Auto prefers a local import. */
 async function loadPack(choice) {
@@ -38,21 +41,34 @@ async function loadPack(choice) {
   return (await tryOne(LOCAL)) ?? (await tryOne(SHIPPED));
 }
 
+const obj = (k) => {
+  const v = shared(k);
+  return v && typeof v === "object" ? v : {};
+};
+
 export default class World {
   init(_p, cx) {
     this.pack = null;
     this.packChoice = null;
     this.size = null;
     this.t0 = {};
-    this.pan = { x: 0, y: 0 }; // camera offset from the active town, screen px (drag to move)
+    // Camera: `base` is the world point drawn at the view's centre, `pan` a screen offset on
+    // top (dragging only changes pan, so units' native loops never restart mid-drag).
+    this.base = null;
+    this.pan = { x: 0, y: 0 };
     this.drag = null;
     this.dragEnd = 0;
     this.wheel = 1; // scroll-wheel zoom, on top of Options → World zoom
-    this.activeSpace = null;
+    this.hover = null; // pointer, element px (for placing a building being moved)
+    this.stats = {}; // space id -> { commits, ageDays }
+    this.lastStatus = {};
+    this.changedAt = {};
     this.reload(cx);
+    this.refreshStats(cx);
+    cx.timer.every(STATS_EVERY, (cx) => this.refreshStats(cx));
     cx.timer.every(1000 / FPS_CAP, (cx) => {
       if (shared("empires.pack") !== this.packChoice) this.reload(cx);
-      if (this.animating()) cx.notify();
+      if (this.animating() || shared("empires.moving")) cx.notify();
     });
   }
 
@@ -60,6 +76,36 @@ export default class World {
     this.packChoice = shared("empires.pack") ?? "auto";
     cx.spawn(async (cx) => {
       this.pack = await loadPack(this.packChoice);
+      cx.notify();
+    });
+  }
+
+  /** Commits and repo age per space (git, on the space's machine), for town levels. */
+  refreshStats(cx) {
+    cx.spawn(async (cx) => {
+      const seen = obj("empires.townSeen");
+      let seenChanged = false;
+      for (const s of spaces()) {
+        if (!seen[s.id]) {
+          seen[s.id] = Date.now();
+          seenChanged = true;
+        }
+        const tabIds = new Set(s.tabs.map((t) => t.id));
+        const cwd = s.folder || panes().find((p) => tabIds.has(p.tab) && p.cwd)?.cwd || null;
+        let commits = 0;
+        let root = 0;
+        if (cwd) {
+          try {
+            const r = await exec("sh", ["-c", "git rev-list --count HEAD 2>/dev/null; git log --max-parents=0 --format=%ct HEAD 2>/dev/null | tail -1"], { cwd, on: s.machine ?? null });
+            const [c, t] = r.stdout.trim().split("\n");
+            commits = Number(c) || 0;
+            root = Number(t) || 0;
+          } catch {}
+        }
+        const since = root ? root * 1000 : seen[s.id];
+        this.stats[s.id] = { commits, ageDays: Math.max(0, (Date.now() - since) / 86400000) };
+      }
+      if (seenChanged) setShared("empires.townSeen", seen);
       cx.notify();
     });
   }
@@ -74,6 +120,11 @@ export default class World {
     if (!this.size || this.size.width < 40 || this.size.height < 40) return false;
     if (appWindow()?.active === false && shared("empires.animateInactive") !== true) return false;
     return agents().length > 0;
+  }
+
+  /** A press that ended a drag a moment ago is not a click. */
+  wasDrag() {
+    return Date.now() - this.dragEnd < 250;
   }
 
   // ---- drawing helpers
@@ -116,12 +167,56 @@ export default class World {
     return { el, w: fw * S, h: fh * S, ax: ax * S, ay: ay * S };
   }
 
-  unitEl(un, S, view, now) {
-    const ent = this.pack.data.entities?.villager;
+  /** A Sims-style speech bubble over a unit's head: "?" needs you, "✓" done, "⚒" just started. */
+  bubble(kind, cxPx, now, since) {
+    const look = {
+      ask: { text: "?", fg: "#ffffff", bg: C.blocked, edge: "#fff6e8" },
+      done: { text: "✓", fg: "#ffffff", bg: "#3e9e48", edge: "#fff6e8" },
+      work: { text: "⚒", fg: "#2a1c0d", bg: "#f6ecc9", edge: C.gold },
+    }[kind];
+    const W = 22, H = 20;
+    let b = div()
+      .absolute()
+      .left(cxPx - W / 2)
+      .top(-H - 14)
+      .w(W)
+      .h(H + 7)
+      .child(div().absolute().left(0).top(0).w(W).h(H).rounded(7).bg(look.bg).border(1.5).border_color(look.edge).flex().items_center().justify_center().text_color(look.fg).font_weight(800).text_size(13).child(look.text))
+      // The tail: a small triangle pointing at the head.
+      .child(window.paint_path(PathBuilder.fill().move_to(W / 2 - 4, H - 1).line_to(W / 2 + 4, H - 1).line_to(W / 2, H + 6).close().build(), look.bg).absolute().top(0).left(0).w(W).h(H + 7));
+    if (!calm()) b = b.loop("top", { from: -H - 14, to: -H - 18, period: kind === "ask" ? 700 : 1400 });
+    // A "started work" pop fades out over its few seconds.
+    if (kind === "work") b = b.opacity(Math.max(0, 1 - (now - since) / 3500));
+    return b;
+  }
+
+  /** A green plumb-bob over the selected (focused) unit. */
+  plumbob(cxPx) {
+    const W = 10, H = 16;
+    let p = window
+      .paint_path(PathBuilder.fill().move_to(W / 2, 0).line_to(W, H / 2).line_to(W / 2, H).line_to(0, H / 2).close().build(), "#5fd35a")
+      .absolute()
+      .left(cxPx - W / 2)
+      .top(-H - 6)
+      .w(W)
+      .h(H);
+    if (!calm()) p = p.loop("top", { from: -H - 6, to: -H - 10, period: 1200 });
+    return p;
+  }
+
+  unitEl(un, S0, view, now) {
+    const ents = this.pack.data.entities ?? {};
+    const ent = ents[un.look] ?? ents.villager;
     if (!ent) return null;
+    const S = S0 * (un.scale ?? 1);
     const working = un.status === "working" && this.moving();
     const key = `${un.address}:${un.status}`;
     const t0 = (this.t0[key] ??= now);
+    // Status changes drive the bubbles: remember when each unit last changed.
+    if (this.lastStatus[un.address] !== un.status) {
+      if (this.lastStatus[un.address] !== undefined) this.changedAt[un.address] = now;
+      this.lastStatus[un.address] = un.status;
+    }
     let anim = "idle";
     let dir = "S";
     let at = un.status === "blocked" ? un.door : un.idle;
@@ -143,18 +238,18 @@ export default class World {
     let body = div().relative().w(f.w).h(f.h);
     if (un.focused) body = body.child(div().absolute().left(f.ax - 14 * S * 2).top(f.ay - 6 * S * 2).w(28 * S * 2).h(12 * S * 2).rounded_full().border(2).border_color(C.goldBright));
     body = body.child(f.el);
-    if (un.status === "blocked")
-      body = body.child(
-        div().absolute().left(f.ax - 8).top(-20).w(16).h(18).rounded(3).bg(C.blocked).border(1).border_color("#fff6e8").flex().items_center().justify_center().text_color("#fff6e8").font_weight(800).text_size(12).child("!").when(!calm(), (el) => el.loop("opacity", { from: 0.45, to: 1, period: 700 })),
-      );
-    if (un.status === "done") body = body.child(image(`${ASSETS}/img/badge-done.svg`).absolute().left(f.ax - 8).top(-18).w(16).h(16));
+    const since = this.changedAt[un.address] ?? 0;
+    if (un.status === "blocked") body = body.child(this.bubble("ask", f.ax, now, since));
+    else if (un.status === "done") body = body.child(this.bubble("done", f.ax, now, since));
+    else if (un.status === "working" && since && now - since < 3500) body = body.child(this.bubble("work", f.ax, now, since));
+    else if (un.focused) body = body.child(this.plumbob(f.ax));
     let el = div()
       .id(`unit-${key}`)
       .absolute()
       .cursor_pointer()
-      .tooltip(`${un.name}: ${un.status === "working" ? `gathering ${un.resource}` : un.status === "blocked" ? "under attack: needs you" : un.status === "done" ? "task complete" : "idle"}${un.workers ? ` · ${un.workers} worker${un.workers === 1 ? "" : "s"}` : ""}. Click to talk to it`)
+      .tooltip(`${un.name}: ${un.status === "working" ? `gathering ${un.resource}` : un.status === "blocked" ? "has a question for you" : un.status === "done" ? "task complete" : "idle"}${un.workers ? ` · ${un.workers} worker${un.workers === 1 ? "" : "s"}` : ""}. Click to talk to it`)
       .on_click((_e, cx) => {
-        if (this.wasDrag()) return;
+        if (this.wasDrag() || shared("empires.moving")) return;
         openUnitChat(un.address, un.name, { at: this.lastPress ? { x: this.lastPress.x + 14, y: Math.max(0, this.lastPress.y - 60) } : null });
         cx.notify();
       })
@@ -169,32 +264,6 @@ export default class World {
       el = el.left(view.x(at.x) - f.ax).top(view.y(at.y) - f.ay);
     }
     return { el, y: working ? un.home.y : at.y };
-  }
-
-  /** Right-click on a town center or building: start a new agent (or a shell) in that space. */
-  trainMenu(town, at, cx) {
-    const space = spaces().find((s) => s.id === town.space);
-    cx.spawn(async () => {
-      let known = [];
-      try {
-        known = (await knownAgents({ on: space?.machine ?? null })).filter((a) => a.installed && Array.isArray(a.run) && a.run.length);
-      } catch {}
-      const items = [
-        ...known.slice(0, 10).map((a) => ({ label: `Train ${a.name}`, icon: "train", act: { run: ["tab.new", { space: town.space, argv: a.run }] } })),
-        ...(known.length ? [] : [{ label: "No agents found on this machine", disabled: true }]),
-        { sep: true },
-        { label: "Train with &orders...", icon: "train", act: { dialog: { kind: "train", title: "Train a unit", space: town.space } } },
-        { label: "New &worker (shell tab)", icon: "build", act: { run: ["tab.new", { space: town.space }] } },
-        { sep: true },
-        { label: `Show ${town.name}`, icon: "town", act: { run: ["space.select", { id: town.space }] } },
-      ];
-      openMenu(items, at);
-    });
-  }
-
-  /** A press that ended a drag a moment ago is not a click. */
-  wasDrag() {
-    return Date.now() - this.dragEnd < 250;
   }
 
   /** Ground covering the visible part of the world container (shifted by the pan). */
@@ -222,7 +291,7 @@ export default class World {
     for (let r = r0; r < r0 + rows; r++) {
       for (let c = c0; c < c0 + cols; c++) {
         const wx = c * tw + (r & 1 ? tw / 2 : 0), wy = r * (th / 2);
-        const near = towns.some((tn) => Math.hypot((wx - tn.x) / 1, (wy - tn.y) * 2) < 150);
+        const near = towns.some((tn) => Math.hypot(wx - tn.x, (wy - tn.y) * 2) < 150);
         const set = near ? dirt : grass;
         const v = set[hashStr(`${c},${r}`) % set.length];
         out.push(image(this.path(v)).absolute().left(view.x(wx) - TW / 2).top(view.y(wy) - TH / 2).w(TW).h(TH));
@@ -231,10 +300,74 @@ export default class World {
     return out;
   }
 
-  render(_cx) {
+  // ---- right-click menus
+
+  /** Train units here, and (for a building) move it or change what it is; (town) move the town. */
+  contextMenu(town, building, at, cx) {
+    const space = spaces().find((s) => s.id === town.space);
+    const ents = this.pack?.data?.entities ?? {};
+    cx.spawn(async () => {
+      let known = [];
+      try {
+        known = (await knownAgents({ on: space?.machine ?? null })).filter((a) => a.installed && Array.isArray(a.run) && a.run.length);
+      } catch {}
+      const items = [
+        ...known.slice(0, 10).map((a) => ({ label: `Train ${a.name}`, icon: "train", act: { run: ["tab.new", { space: town.space, argv: a.run }] } })),
+        ...(known.length ? [] : [{ label: "No agents found on this machine", disabled: true }]),
+        { label: "Train with &orders...", icon: "train", act: { dialog: { kind: "train", title: "Train a unit", space: town.space } } },
+        { label: "New &worker (shell tab)", icon: "build", act: { run: ["tab.new", { space: town.space }] } },
+        { sep: true },
+      ];
+      if (building) {
+        const kinds = obj("empires.buildingKinds");
+        const pos = obj("empires.buildingPos");
+        const available = BUILDING_KINDS.filter((k) => entityFallback(ents, k) === k);
+        items.push(
+          { label: "&Move building", icon: "rally", act: { shared: ["empires.moving", { type: "building", tab: building.tab, kind: building.kind, town: town.space, slot: town.slot }] } },
+          { label: "Change &type", icon: "build", sub: available.map((k) => ({ label: KIND_LABEL[k] ?? k, radio: true, checked: building.kind === k, act: { shared: ["empires.buildingKinds", { ...kinds, [building.tab]: k }] } })) },
+        );
+        if (kinds[building.tab]) {
+          const { [building.tab]: _gone, ...rest } = kinds;
+          items.push({ label: "Reset type", act: { shared: ["empires.buildingKinds", rest] } });
+        }
+        if (pos[building.tab]) {
+          const { [building.tab]: _gone, ...rest } = pos;
+          items.push({ label: "Reset position", act: { shared: ["empires.buildingPos", rest] } });
+        }
+        items.push({ sep: true }, { label: `Show this tab`, icon: "house", act: { run: ["tab.select", { id: building.tab }] } });
+      } else {
+        const townPos = obj("empires.townPos");
+        items.push({ label: "&Move town", icon: "rally", act: { shared: ["empires.moving", { type: "town", town: town.space, slot: town.slot }] } });
+        if (townPos[town.space]) {
+          const { [town.space]: _gone, ...rest } = townPos;
+          items.push({ label: "Reset town position", act: { shared: ["empires.townPos", rest] } });
+        }
+        items.push({ sep: true }, { label: `Show ${town.name}`, icon: "town", act: { run: ["space.select", { id: town.space }] } });
+      }
+      openMenu(items, at);
+    });
+  }
+
+  /** Places what is being moved at the pointer (element px), in world coordinates. */
+  place(moving, lx, ly, model) {
+    const S = this.lastS ?? 1;
+    const w = this.size?.width ?? 0, h = this.size?.height ?? 0;
+    const wx = Math.round(this.base.x + (lx - w / 2 - this.pan.x) / S);
+    const wy = Math.round(this.base.y + (ly - h * 0.5 - this.pan.y) / S);
+    if (moving.type === "town") {
+      setShared("empires.townPos", { ...obj("empires.townPos"), [moving.town]: { x: wx, y: wy } });
+    } else {
+      const town = model.towns.find((t) => t.space === moving.town);
+      if (town) setShared("empires.buildingPos", { ...obj("empires.buildingPos"), [moving.tab]: { x: wx - town.x, y: wy - town.y } });
+    }
+    setShared("empires.moving", null);
+  }
+
+  render(cx) {
     const u = unit();
     const now = Date.now();
     const w = this.size?.width ?? 0, h = this.size?.height ?? 0;
+    const moving = shared("empires.moving");
     let rootEl = div()
       .id("world")
       .size_full()
@@ -244,13 +377,58 @@ export default class World {
       .on_size_change((size, cx) => {
         this.size = size;
         cx.notify();
-      })
-      // Drag anywhere on the map to move around; the wheel zooms.
-      .on_mouse_down("left", (e) => {
+      });
+    if (!this.pack) return root(u, rootEl.child(div().absolute().top(8).left(10).text_color(C.text).child("Loading the art pack…")));
+    const ents = this.pack.data.entities ?? {};
+    // Stable town slots: a new space takes the smallest free one; nothing moves when you switch.
+    const all = spaces();
+    const slots = assignSlots(all.map((s) => s.id), obj("empires.townSlots"));
+    if (Object.keys(slots).length !== Object.keys(obj("empires.townSlots")).length) cx.spawn(async () => setShared("empires.townSlots", slots));
+    const model = worldModel({
+      spaces: all,
+      agents: agents(),
+      terminals: terminals(),
+      colors: shared("space.colors"),
+      slots,
+      townPos: obj("empires.townPos"),
+      buildingPos: obj("empires.buildingPos"),
+      kinds: obj("empires.buildingKinds"),
+      stats: this.stats,
+      looks: Array.isArray(this.pack.data.unitLooks) && this.pack.data.unitLooks.length ? this.pack.data.unitLooks : ["villager"],
+    });
+    const active = model.towns.find((t) => t.active) ?? model.towns[0];
+    // The camera starts on the shown space's town, then stays where you leave it.
+    this.base ??= active ? { x: active.x, y: active.y } : { x: 0, y: 0 };
+    const S = Math.max(0.45, Math.min(0.8, h / 440)) * (Number(shared("empires.worldZoom")) || 1) * this.wheel;
+    this.lastS = S;
+    const pan = this.pan;
+    const cx0 = w / 2, cy0 = h * 0.5;
+    const view = { x: (x) => cx0 + (x - this.base.x) * S, y: (y) => cy0 + (y - this.base.y) * S };
+    rootEl = rootEl
+      // Drag anywhere on the map to move around; the wheel zooms; while moving a building,
+      // a click places it and a right-click cancels.
+      .on_mouse_down("left", (e, cx) => {
         this.lastPress = { x: Math.round(e.position.x), y: Math.round(e.position.y) };
+        const mv = shared("empires.moving");
+        if (mv && e.local_position) {
+          cx.stop_propagation();
+          this.place(mv, e.local_position.x, e.local_position.y, model);
+          return;
+        }
         this.drag = { sx: e.position.x, sy: e.position.y, px: this.pan.x, py: this.pan.y, moved: false };
       })
+      .on_mouse_down("right", (_e, cx) => {
+        if (shared("empires.moving")) {
+          cx.stop_propagation();
+          setShared("empires.moving", null);
+        }
+      })
       .on_mouse_move((e, cx) => {
+        if (shared("empires.moving")) {
+          this.hover = e.local_position;
+          cx.notify();
+          return;
+        }
         if (!this.drag) return;
         const dx = e.position.x - this.drag.sx, dy = e.position.y - this.drag.sy;
         if (!this.drag.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
@@ -268,32 +446,21 @@ export default class World {
       .on_scroll_wheel((e, cx) => {
         const d = e.delta?.y ?? 0;
         if (!d) return;
+        // Keep the world point at the view's centre where it is, then zoom around it.
+        this.base = { x: this.base.x - this.pan.x / S, y: this.base.y - this.pan.y / S };
+        this.pan = { x: 0, y: 0 };
         this.wheel = Math.max(0.5, Math.min(2.2, this.wheel * (d > 0 ? 1.08 : 1 / 1.08)));
         cx.notify();
       });
-    if (!this.pack) return root(u, rootEl.child(div().absolute().top(8).left(10).text_color(C.text).child("Loading the art pack…")));
-    const ents = this.pack.data.entities ?? {};
-    // A different space shown: centre on its town again.
-    const act = spaces().find((x) => x.active)?.id ?? null;
-    if (act !== this.activeSpace) {
-      this.activeSpace = act;
-      this.pan = { x: 0, y: 0 };
-    }
-    const pan = this.pan;
-    const model = worldModel({ spaces: spaces(), agents: agents(), terminals: terminals(), colors: shared("space.colors") });
-    // Camera: the active town a little above centre; the world scale fits the view's height.
-    // Scale: fit the view's height, but never so small that units stop reading (a split band is short).
-    const S = Math.max(0.45, Math.min(0.8, h / 440)) * (Number(shared("empires.worldZoom")) || 1) * this.wheel;
-    const cx0 = w / 2, cy0 = h * 0.5;
-    const view = { x: (x) => cx0 + x * S, y: (y) => cy0 + y * S };
     const tiles = this.terrain(S, view, w, h, model.towns, pan);
     // Trodden ground under each town center, between the ground and the sprites.
     const patch = ents.dirt_patch;
     if (patch) for (const town of model.towns) tiles.push(this.sprite(patch, patch.image ?? patch.variants?.[0], town.slot, town.x, town.y + 40, S, view));
     const items = [];
     const visible = (x, y, pad = 400) => view.x(x) + pan.x > -pad * S && view.x(x) + pan.x < w + pad * S && view.y(y) + pan.y > -pad * S && view.y(y) + pan.y < h + pad * S;
+    const isMoving = (t, b) => moving && ((moving.type === "town" && moving.town === t.space) || (moving.type === "building" && b && moving.tab === b.tab));
     for (const town of model.towns) {
-      if (!visible(town.x, town.y, 900)) continue;
+      if (!visible(town.x, town.y, 1100)) continue;
       const tree = ents[entityFallback(ents, "tree")];
       if (tree) for (const f of town.forest) if (visible(f.x, f.y)) items.push({ y: f.y, el: this.sprite(tree, tree.variants?.[f.v % tree.variants.length] ?? tree.image, town.slot, f.x, f.y, S, view) });
       for (const [kind, ent] of [["gold", "gold_mine"], ["stone", "stone_mine"], ["food", "berry_bush"]]) {
@@ -301,12 +468,31 @@ export default class World {
         const p = town.nodes[kind];
         if (name && p) items.push({ y: p.y, el: this.sprite(ents[name], ents[name].image ?? ents[name].variants?.[0], town.slot, p.x, p.y, S, view) });
       }
+      // Grown buildings: what the town's level has unlocked (decor; hover says why).
+      for (const ex of town.extras) {
+        const name = entityFallback(ents, ex.kind);
+        if (!name || !visible(ex.x, ex.y)) continue;
+        const ent = ents[name];
+        const rel = ent.variants ? ent.variants[hashStr(ex.id) % ent.variants.length] : ent.image;
+        items.push({ y: ex.y, el: div().id(`ex-${ex.id}`).tooltip(`${KIND_LABEL[ex.kind] ?? ex.kind}: ${town.name} is level ${town.level}${town.stats?.commits ? ` (${town.stats.commits} commits)` : ""}`).child(this.sprite(ent, rel, town.slot, ex.x, ex.y, S, view)) });
+      }
       const tcName = entityFallback(ents, "town_center");
       if (tcName) {
         const tc = ents[tcName];
         items.push({
           y: town.y,
-          el: div().id(`tc-${town.space}`).cursor_pointer().tooltip(`${town.name}: town center. Click to show this space; right-click to train a unit here`).on_click(() => { if (!this.wasDrag()) run("space.select", { id: town.space }); }).on_mouse_down("right", (e, cx) => { cx.stop_propagation(); this.trainMenu(town, e.position, cx); }).child(this.sprite(tc, tc.image, town.slot, town.x, town.y, S, view)),
+          el: div()
+            .id(`tc-${town.space}`)
+            .cursor_pointer()
+            .tooltip(`${town.name}: town center, level ${town.level}. Click to show this space; right-click to train units or move the town`)
+            .on_click(() => {
+              if (!this.wasDrag() && !shared("empires.moving")) run("space.select", { id: town.space });
+            })
+            .on_mouse_down("right", (e, cx) => {
+              cx.stop_propagation();
+              if (!shared("empires.moving")) this.contextMenu(town, null, e.position, cx);
+            })
+            .child(this.sprite(tc, tc.image, town.slot, town.x, town.y, S, view, { opacity: isMoving(town) ? 0.35 : null })),
         });
       }
       town.buildings.forEach((b) => {
@@ -316,17 +502,28 @@ export default class World {
         const rel = ent.variants ? ent.variants[hashStr(b.tab) % ent.variants.length] : ent.image;
         items.push({
           y: b.y,
-          el: div().id(`bld-${b.tab}`).cursor_pointer().tooltip(`${b.name ? `Tab ${b.name}` : "Tab"}${b.settled ? " (garrisoned)" : ""}: click to show it; right-click to train a unit in ${town.name}`).on_click(() => { if (!this.wasDrag()) run("tab.select", { id: b.tab }); }).on_mouse_down("right", (e, cx) => { cx.stop_propagation(); this.trainMenu(town, e.position, cx); }).child(this.sprite(ent, rel, town.slot, b.x, b.y, S, view, { opacity: b.settled ? 0.8 : null })),
+          el: div()
+            .id(`bld-${b.tab}`)
+            .cursor_pointer()
+            .tooltip(`${KIND_LABEL[b.kind] ?? "Building"}: ${b.name ? `tab ${b.name}` : "a tab"}${b.settled ? " (garrisoned)" : ""}. Click to show it; right-click to train, move or change it`)
+            .on_click(() => {
+              if (!this.wasDrag() && !shared("empires.moving")) run("tab.select", { id: b.tab });
+            })
+            .on_mouse_down("right", (e, cx) => {
+              cx.stop_propagation();
+              if (!shared("empires.moving")) this.contextMenu(town, b, e.position, cx);
+            })
+            .child(this.sprite(ent, rel, town.slot, b.x, b.y, S, view, { opacity: isMoving(town, b) ? 0.35 : b.settled ? 0.8 : null })),
         });
       });
-      // Town banner under the town center: name, and "+N" when units overflow the cap.
+      // Town banner under the town center: name, level, and "+N" when units overflow the cap.
       items.push({
         y: town.y + 1e6, // always on top
         el: div()
           .absolute()
-          .left(view.x(town.x) - 70)
+          .left(view.x(town.x) - 80)
           .top(view.y(town.y) + 150 * S)
-          .w(140)
+          .w(160)
           .flex()
           .justify_center()
           .child(
@@ -340,7 +537,7 @@ export default class World {
               .font_family(DISPLAY)
               .text_size(u(11))
               .text_color(C.text)
-              .child(`${town.name}${town.hidden ? `  +${town.hidden}` : ""}`),
+              .child(`${town.name} · ${town.level}${town.hidden ? `  +${town.hidden}` : ""}`),
           ),
       });
     }
@@ -353,45 +550,55 @@ export default class World {
     const live = new Set(model.units.map((un) => `${un.address}:${un.status}`));
     for (const k of Object.keys(this.t0)) if (!live.has(k)) delete this.t0[k];
     items.sort((a, b) => a.y - b.y);
+    // The building (or town center) being moved follows the pointer as a ghost.
+    let ghost = null;
+    if (moving && this.hover) {
+      const ent = moving.type === "town" ? ents[entityFallback(ents, "town_center")] : ents[entityFallback(ents, moving.kind)];
+      if (ent) {
+        const [gw, gh] = ent.size ?? [96, 96];
+        const [ax, ay] = ent.anchor ?? [gw / 2, gh];
+        const rel = ent.variants ? ent.variants[0] : ent.image;
+        ghost = image(this.path(rel, moving.slot)).absolute().left(this.hover.x - ax * S).top(this.hover.y - ay * S).w(gw * S).h(gh * S).opacity(0.7);
+      }
+    }
     // Everything on the map sits in one container moved by the pan, so dragging never
     // restarts the units' native walking loops (their coordinates don't change).
     rootEl = rootEl.child(div().absolute().left(pan.x).top(pan.y).w(w).h(h).children(tiles).children(items.map((i) => i.el)));
-    // Corner controls: the view mode and the pack's credit line.
-    rootEl = rootEl.child(
-      own(
+    if (ghost) rootEl = rootEl.child(ghost);
+    if (moving)
+      rootEl = rootEl.child(
+        div().absolute().top(u(8)).left(0).w_full().flex().justify_center().child(div().px(u(10)).py(u(3)).rounded(u(3)).bg("#2b2016e0").border(1).border_color(C.goldBright).text_color(C.text).font_family(FONT_SC).text_size(u(12)).child(`Click to place the ${moving.type === "town" ? "town" : "building"} · right-click to cancel`)),
+      );
+    // Corner: Centre once the camera has moved (the view buttons live in the top bar).
+    const off = pan.x || pan.y || this.wheel !== 1 || (active && (this.base.x !== active.x || this.base.y !== active.y));
+    if (off)
+      rootEl = rootEl.child(
         div()
           .absolute()
           .top(u(6))
           .right(u(8))
-          .flex()
-          .gap(u(4))
-          .children(
-            // The view buttons live in the top bar (always on screen); here only Centre, once moved.
-            (pan.x || pan.y || this.wheel !== 1 ? [["center", "Centre"]] : []).map(([m, label]) =>
-              div()
-                .id(`view-${m}`)
-                .px(u(6))
-                .py(u(1))
-                .rounded(u(3))
-                .cursor_pointer()
-                .font_family(FONT_SC)
-                .text_size(u(11))
-                .bg(viewMode() === m ? C.gold : "#2b2016c0")
-                .text_color(viewMode() === m ? "#1f1c17" : C.text)
-                .tooltip(m === "center" ? "Back to this space's town, at the normal zoom" : `${label} view (Alt+W cycles)`)
-                .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
-                .on_click((_e, cx) => {
-                  if (m === "center") {
-                    this.pan = { x: 0, y: 0 };
-                    this.wheel = 1;
-                    cx.notify();
-                  } else setView(m);
-                })
-                .child(label),
-            ),
+          .child(
+            div()
+              .id("view-center")
+              .px(u(6))
+              .py(u(1))
+              .rounded(u(3))
+              .cursor_pointer()
+              .font_family(FONT_SC)
+              .text_size(u(11))
+              .bg("#2b2016c0")
+              .text_color(C.text)
+              .tooltip("Back to the shown space's town, at the normal zoom")
+              .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+              .on_click((_e, cx) => {
+                this.base = active ? { x: active.x, y: active.y } : { x: 0, y: 0 };
+                this.pan = { x: 0, y: 0 };
+                this.wheel = 1;
+                cx.notify();
+              })
+              .child("Centre"),
           ),
-      ),
-    );
+      );
     if (this.pack.data.attribution)
       rootEl = rootEl.child(div().absolute().bottom(u(2)).left(u(6)).text_size(u(9)).text_color("#f1e6c8a0").child(this.pack.data.local ? "Local art pack (your own install; never shared)" : "Art: 0 A.D. © Wildfire Games, CC BY-SA 3.0"));
     return root(u, rootEl);

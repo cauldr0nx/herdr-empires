@@ -57,3 +57,7 @@ bun.lock
 bun.lockb
 .DS_Store
 Thumbs.db
+
+# Python bytecode (art pipeline scripts)
+__pycache__/
+*.pyc

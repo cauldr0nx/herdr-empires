@@ -30,8 +30,21 @@ mkdir -p "$HERDR_APP_HOME" "$XDG_RUNTIME_DIR" "$XDG_STATE_HOME" "$demo/demo-api"
 chmod 700 "$XDG_RUNTIME_DIR"
 printf '{ "zoom": 1, "sounds": { "enabled": false }, "telemetry": false }\n' >"$HERDR_APP_HOME/settings.json"
 printf '{ "frame.welcomed": "finished", "empires.boot": "off" }\n' >"$HERDR_APP_HOME/shared.json"
-(cd "$demo/demo-api" && git init -q && git commit -q --allow-empty -m "demo" && git branch -q -M main) 2>/dev/null
-(cd "$demo/demo-web" && git init -q && git commit -q --allow-empty -m "demo" && git branch -q -M feat/hud) 2>/dev/null
+# Demo repos of different sizes and ages, so the towns show different levels (SPEC §18.3).
+# A generic demo identity: nothing of the person running this goes into them.
+demo_repo() { # demo_repo DIR BRANCH COMMITS DAYS-OLD
+  ( cd "$1" && git init -q && git branch -q -M "$2" 2>/dev/null
+    export GIT_AUTHOR_NAME=demo GIT_AUTHOR_EMAIL=demo@example.invalid GIT_COMMITTER_NAME=demo GIT_COMMITTER_EMAIL=demo@example.invalid
+    first=$(( $(date +%s) - $4 * 86400 ))
+    i=0
+    while [ $i -lt "$3" ]; do
+      t=$(( first + i * ($4 * 86400 / ($3 + 1)) ))
+      GIT_AUTHOR_DATE="@$t" GIT_COMMITTER_DATE="@$t" git commit -q --allow-empty -m "demo $i"
+      i=$((i + 1))
+    done ) >/dev/null 2>&1
+}
+demo_repo "$demo/demo-api" main 300 60
+demo_repo "$demo/demo-web" feat/hud 40 10
 fake=$(pwd)/tools/demo/fake-agent.sh
 
 cleanup() {
