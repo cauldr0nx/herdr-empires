@@ -76,7 +76,6 @@ export default class Herald {
       .gap(u(6))
       .bg(C.parchment)
       .border(u(1))
-      .border_color(C.parchmentEdge)
       .border_l(u(3))
       .border_color(accent)
       .rounded(u(3))
