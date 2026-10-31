@@ -45,6 +45,9 @@
   "icons/expand.svg": "art/generate.ts",
   "icons/wait.svg": "art/generate.ts",
   "icons/queue.svg": "art/generate.ts",
+  "icons/house.svg": "art/generate.ts",
+  "icons/town.svg": "art/generate.ts",
+  "icons/tower.svg": "art/generate.ts",
   "img/food.svg": "art/generate.ts",
   "img/wood.svg": "art/generate.ts",
   "img/gold.svg": "art/generate.ts",
@@ -62,5 +65,6 @@
   "img/badge-blocked.svg": "art/generate.ts",
   "img/badge-done.svg": "art/generate.ts",
   "img/badge-idle.svg": "art/generate.ts",
-  "img/logo.svg": "art/generate.ts"
+  "img/logo.svg": "art/generate.ts",
+  "img/loading.svg": "art/generate.ts"
 }

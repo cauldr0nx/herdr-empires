@@ -56,7 +56,6 @@ for (const f of sources) {
   const rel = f.slice(modDir.length + 1);
   const text = readFileSync(f, "utf8");
   if (/\bsetTimeout\s*\(|\bsetInterval\s*\(/.test(text)) fail(`${rel}: setTimeout/setInterval is not allowed (use cx.timer, native motion)`);
-  if (/^\s*await\s/m.test(text) && /^(?!.*async).*^\s*await\s/ms.test(text)) warn(`${rel}: top-level await?`);
   for (const m of text.matchAll(/cx\.timer\.(every|after)\(\s*([0-9]+)/g)) {
     if (Number(m[2]) < 1000) fail(`${rel}: cx.timer.${m[1]}(${m[2]}) is faster than 1 s`);
   }

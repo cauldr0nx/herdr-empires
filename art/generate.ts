@@ -99,6 +99,9 @@ glyph("help", circle(8, 8, 7, stroke("currentColor", 1.6)) + path("M5.5 6a2.5 2.
 glyph("expand", path("M2 2h5M2 2v5M14 14h-5M14 14V9", stroke("currentColor", 2)));
 glyph("wait", circle(8, 8, 6.5, stroke("currentColor", 1.6)) + path("M8 4v4l3 2", stroke("currentColor", 1.8)));
 glyph("queue", rect(2, 2, 12, 3) + rect(2, 6.5, 12, 3) + rect(2, 11, 8, 3));
+glyph("house", poly([[8, 1], [1, 8], [3, 8], [3, 15], [13, 15], [13, 8], [15, 8]]) + rect(7, 10, 2, 5, f("#000000") + ' fill-opacity="0.45"'));
+glyph("town", rect(7, 0, 1.2, 5) + poly([[8, 0], [12, 1.5], [8, 3]]) + poly([[8, 4], [1, 9], [15, 9]]) + rect(2, 9, 12, 6) + rect(6.5, 11, 3, 4, f("#000000") + ' fill-opacity="0.45"'));
+glyph("tower", rect(5, 5, 6, 11) + rect(4, 3, 2, 2) + rect(7, 3, 2, 2) + rect(10, 3, 2, 2) + rect(7, 10, 2, 6, f("#000000") + ' fill-opacity="0.45"'));
 
 // ---- full-colour pictures (32 px): resources, buildings, badges, misc
 
@@ -200,6 +203,39 @@ picture("logo", [
   circle(18, 30, 3, f(P.red)), circle(32, 24, 3, f(P.blue)), circle(46, 30, 3, f("#3e9e48")),
   path("M20 54l6 4-6 4M30 62h12", stroke(P.text, 3)),
 ].join(""), 64);
+
+// ---- screens (SPEC §13.2): loading screen, drawn in code, safe for 16:9 and 9:16.
+function loadingScreen() {
+  const W = 1600, H = 900;
+  const hills = [
+    path("M0 640C200 600 420 620 640 580S1100 560 1600 600V900H0z", f("#2a2219")),
+    path("M0 700C300 660 600 690 900 650S1300 640 1600 680V900H0z", f("#1f1a12")),
+  ];
+  const castle = (x: number, y: number, s: number, c: string) => [
+    rect(x - 120 * s, y - 90 * s, 240 * s, 90 * s, f(c)),
+    rect(x - 150 * s, y - 150 * s, 50 * s, 150 * s, f(c)), rect(x + 100 * s, y - 150 * s, 50 * s, 150 * s, f(c)),
+    rect(x - 30 * s, y - 210 * s, 60 * s, 210 * s, f(c)),
+    ...[-150, -130, -110, 100, 120, 140].map((dx) => rect(x + dx * s, y - 162 * s, 12 * s, 12 * s, f(c))),
+    ...[-30, -10, 10].map((dx) => rect(x + dx * s, y - 222 * s, 12 * s, 12 * s, f(c))),
+    rect(x - 3 * s, y - 260 * s, 3 * s, 50 * s, f("#7a5230")), poly([[x, y - 260 * s], [x + 40 * s, y - 250 * s], [x, y - 240 * s]], f("#b8922a")),
+    ...[-100, -60, 60, 100].map((dx) => rect(x + dx * s, y - 60 * s, 10 * s, 20 * s, f("#f3c15c") + ' fill-opacity="0.85"')),
+  ].join("");
+  const stars = Array.from({ length: 60 }, (_, i) => circle((i * 263) % W, (i * 149) % 360, 1 + (i % 3) * 0.5, f("#f1e6c8") + ` fill-opacity="${0.3 + (i % 5) * 0.12}"`)).join("");
+  const body = [
+    `<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f1626"/><stop offset="0.55" stop-color="#3a2a2a"/><stop offset="1" stop-color="#8a5a2a"/></linearGradient></defs>`,
+    rect(0, 0, W, H, ' fill="url(#sky)"'),
+    stars,
+    circle(1180, 300, 70, f("#f3c15c") + ' fill-opacity="0.9"'),
+    ...hills,
+    castle(800, 640, 1.1, "#15110c"),
+    castle(380, 660, 0.5, "#1a1510"), castle(1250, 650, 0.6, "#1a1510"),
+    path("M0 760C400 740 800 770 1600 740V900H0z", f("#120e09")),
+    rect(0, 0, W, 80, f("#1f1c17")), rect(0, 80, W, 4, f("#b8922a")),
+    rect(0, H - 80, W, 80, f("#1f1c17")), rect(0, H - 84, W, 4, f("#b8922a")),
+  ].join("");
+  out("img/loading.svg", svgTag(W, H, body, ' preserveAspectRatio="xMidYMid slice"'));
+}
+loadingScreen();
 
 writeFileSync(`${root}/art/manifest-generated.json`, JSON.stringify(generated, null, 2) + "\n");
 console.log(`Generated ${Object.keys(generated).length} files under mods/empires/{icons,img}.`);

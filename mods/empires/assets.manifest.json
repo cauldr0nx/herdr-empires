@@ -240,6 +240,15 @@
     "modified": false,
     "notes": ""
   },
+  "icons/house.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
   "icons/idle.svg": {
     "source": "generated",
     "generator": "art/generate.ts",
@@ -394,6 +403,24 @@
     "notes": ""
   },
   "icons/techtree.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/tower.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/town.svg": {
     "source": "generated",
     "generator": "art/generate.ts",
     "url": null,
@@ -583,6 +610,15 @@
     "notes": ""
   },
   "img/house.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/loading.svg": {
     "source": "generated",
     "generator": "art/generate.ts",
     "url": null,
