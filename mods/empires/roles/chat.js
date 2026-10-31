@@ -127,7 +127,8 @@ export default class ChatBar {
           if (!insideChat(e.position, e.bounds ?? this.bounds, state.h)) closeOverlay(p.overlay);
         }),
     )
-      .when(Boolean(status), (el) => el.child(statusBadge(u, status, 12)))
+      // statusBadge has nothing for idle: only add it when there is one (child(null) throws).
+      .when(Boolean(statusBadge(u, status, 12)), (el) => el.child(statusBadge(u, status, 12)))
       .child(div().id("chat-title").flex_1().min_w(0).truncate().font_family(DISPLAY).text_size(u(12)).text_color(C.text).tooltip(state.pinned ? "Drag to move. Pinned: stays open" : "Drag to move. A click outside closes it; Pin to keep it").child(title))
       .child(btn("pin", state.pinned ? "Pinned" : "Pin", state.pinned ? "Unpin: close again on a click outside" : "Pin: keep it open", () => reopen({ pinned: !state.pinned }), { on: state.pinned }))
       .child(btn("full", state.full ? "Restore" : "Full", state.full ? "Back to the window" : "Fill the Herdr window", () => reopen({ full: !state.full })))

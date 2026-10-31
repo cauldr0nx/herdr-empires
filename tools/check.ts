@@ -353,6 +353,8 @@ await renderRole("selection (demo, command layer, focused only)", roles.get("sel
 await renderRole("chatbar (demo)", { role: "chatbar", terminal: "t1", name: "Unit", overlay: "o1" }, demo, null);
 await renderRole("chatbar (empty)", { role: "chatbar", terminal: "t1", overlay: "o1" }, empty, null);
 await renderRole("chatbar (pinned, full)", { role: "chatbar", terminal: "t1", name: "Unit", overlay: "o1", w: 700, h: 420, pinned: true, full: true }, demo, null);
+// Every status, idle included (statusBadge has nothing for idle; a bar must still render).
+for (const t of ["t1", "t3", "t4", "vps/t5"]) await renderRole(`chatbar (demo, ${t})`, { role: "chatbar", terminal: t, name: "Unit", overlay: "o1", w: 620, h: 400 }, demo, null);
 await renderRole("chatgrip (demo)", { role: "chatgrip", terminal: "t1", name: "Unit", overlay: "o1", w: 620, h: 400 }, demo, null);
 await renderRole("resizer (demo)", { role: "resizer", terminal: "t1", name: "Unit", overlay: "o2", state: { w: 620, h: 400, pinned: false }, origin: { x: 100, y: 80 }, grab: { x: 4, y: 4 }, start: { x: 716, y: 476 } }, demo, null);
 delete herdr.log.shared["empires.command"];
