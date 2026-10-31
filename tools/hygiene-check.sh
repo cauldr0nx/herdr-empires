@@ -49,8 +49,8 @@ scan() { # scan <label> <grep -E pattern> [exclude-pattern]
     fail=1
   fi
 }
-# Absolute home paths. "/home/user" style examples are allowed only as the literal
-# placeholder <user>; everything else is a leak.
+# Absolute home paths: only the literal placeholder <user> is allowed after the
+# home prefix; everything else is a leak.
 scan "absolute home path" '(/home/[A-Za-z0-9._-]+|/Users/[A-Za-z0-9._-]+|[A-Za-z]:\\\\Users\\\\[A-Za-z0-9._-]+)' '(/home/<user>|/Users/<user>|Users\\\\<user>|hygiene-check\.sh)'
 # Email addresses, except the commit-trailer allow-list.
 scan "email address" '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' '(noreply@anthropic\.com|users\.noreply\.github\.com|hygiene-check\.sh|@media|@font-face|@import|@2x|@1x)'

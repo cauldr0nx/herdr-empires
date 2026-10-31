@@ -76,6 +76,10 @@ bun art/generate.ts . && bun art/textures.ts . && bun art/sounds.ts .   # regene
 ```
 
 Always test against a throwaway app home: `HERDR_APP_HOME=$(mktemp -d)`.
+On a machine with Herdr, `sh tools/demo/run-demo.sh` builds a clean demo
+profile under Xvfb (towns `demo-api` and `demo-web`, fake agents from
+`tools/demo/fake-agent.sh` reporting every OSC 7501 status) and writes
+`herdr-app shot` screenshots to the gitignored `shots/` folder.
 See `SPEC.md` (the brief), `SPIKES.md` (what the Herdr API really does),
 `RECIPE.md` (the from-scratch build brief) and `CLAUDE.md` (rules for build
 agents).

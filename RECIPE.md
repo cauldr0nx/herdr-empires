@@ -180,6 +180,9 @@ minimap below). Options offers a 2× HUD scale that doubles every HUD pixel.
   `layouts/empires.svg`; `art/sounds.ts` eleven FFmpeg `aevalsrc` sounds
   (horn, bell, done, ageup, click, knock, error, select, train, victory,
   resign). Fonts: Cinzel (variable), Alegreya Sans, Alegreya Sans SC (OFL).
+- Demo profile: `tools/demo/run-demo.sh` (Xvfb, throwaway app home, two
+  towns, `tools/demo/fake-agent.sh` emitting `ESC ] 7501 ; state=<word>:app=demo-agent ESC \`
+  for working/blocked/done/idle, `herdr-app shot` into `shots/`).
 - Programs run: `sh -c 'ps -o etime= -p "$PPID"'` once at start (to decide
   whether to boot); Phase 2 runs `hc` for send/interrupt/kill/templates.
 
