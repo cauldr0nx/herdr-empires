@@ -697,6 +697,7 @@ export default class Dialog {
       .child(heading(u, "World", { size: 11, color: C.ink }))
       .child(this.cycle(u, "view", "View", { split: "Split", map: "Map", terminals: "Terminals" }[viewMode()], ["Split", "Map", "Terminals"], (v) => setView(v.toLowerCase()), "Alt+W cycles: the world over the terminals, the world only, or no world"))
       .child(this.cycle(u, "pack", "Art pack", { auto: "Auto", zeroad: "0 A.D.", local: "Local import" }[shared("empires.pack") ?? "auto"] ?? "Auto", ["Auto", "0 A.D.", "Local import"], (v) => setShared("empires.pack", { Auto: "auto", "0 A.D.": "zeroad", "Local import": "local" }[v]), "Auto uses a local import when present, else the shipped 0 A.D. pack. Build a local pack from your own game install with: tools/install.sh import-local"))
+      .child(this.check(u, "hidenames", "Hide names (made-up town names, no folders or branches: for screenshots)", shared("empires.hideNames") === true, () => setShared("empires.hideNames", shared("empires.hideNames") !== true)))
       .child(this.check(u, "animate", "Animate units (walking, gathering)", shared("empires.animate") !== false, () => setShared("empires.animate", shared("empires.animate") === false), "Off: units stand at their posts and the world draws once per change. Saves battery on long days."))
       .child(this.cycle(u, "wzoom", "World zoom", `${Number(shared("empires.worldZoom")) || 1}×`, ["0.75×", "1×", "1.25×", "1.5×"], (v) => setShared("empires.worldZoom", parseFloat(v))))
       .child(div().h(u(1)).w_full().bg(C.parchmentEdge))

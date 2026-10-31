@@ -399,3 +399,14 @@ describe("growth persists (SPEC §18.3)", () => {
     expect(D.worldModel({ spaces: sp, stats: { a: { commits: 5000, ageDays: 900 } }, minLevels: { a: 2 } }).towns[0].level).toBe(9);
   });
 });
+
+describe("hide names", () => {
+  test("aliases come from unique slots, so they never repeat", () => {
+    const slots = { a: 0, b: 1, c: 2 };
+    const names = ["a", "b", "c"].map((id) => D.townAlias(id, slots));
+    expect(new Set(names).size).toBe(3);
+    expect(D.townAlias("z", { z: D.TOWN_ALIASES.length })).toBe(`${D.TOWN_ALIASES[0]} 2`);
+    const w = D.worldModel({ spaces: [{ id: "a", name: "secret-repo", active: true, tabs: [] }], slots, hideNames: true });
+    expect(w.towns[0].name).not.toContain("secret");
+  });
+});

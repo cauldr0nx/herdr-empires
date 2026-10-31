@@ -445,6 +445,7 @@ export default class World {
       kinds: obj("empires.buildingKinds"),
       stats: this.townStats(),
       minLevels: obj("empires.townLevels"),
+      hideNames: shared("empires.hideNames") === true,
       looks: Array.isArray(this.pack.data.unitLooks) && this.pack.data.unitLooks.length ? this.pack.data.unitLooks : ["villager"],
     });
     const active = model.towns.find((t) => t.active) ?? model.towns[0];

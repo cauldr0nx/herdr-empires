@@ -613,7 +613,7 @@ export function townSites(seed, buildings) {
  * agent), in world px. `activeSpace` goes to the origin. Units carry what the renderer needs:
  * where they live, where they go, their status and colour slot. Caps per SPEC §18.3.
  */
-export function worldModel({ spaces = [], agents = [], terminals = [], colors = null, maxUnits = 60, maxBuildings = 40, slots = null, townPos = {}, buildingPos = {}, kinds = {}, stats = {}, looks = ["villager"], minLevels = {} } = {}) {
+export function worldModel({ spaces = [], agents = [], terminals = [], colors = null, maxUnits = 60, maxBuildings = 40, slots = null, townPos = {}, buildingPos = {}, kinds = {}, stats = {}, looks = ["villager"], minLevels = {}, hideNames = false } = {}) {
   const active = spaces.findIndex((s) => s.active);
   const order = active > 0 ? [spaces[active], ...spaces.filter((_, i) => i !== active)] : spaces.slice();
   const towns = [];
@@ -636,7 +636,7 @@ export function worldModel({ spaces = [], agents = [], terminals = [], colors = 
       return { tab: t.id, name: t.name, kind: kinds[t.id] ?? buildingKind(t, inTab, level), custom: Boolean(kinds[t.id]), settled: Boolean(t.settled), status: t.status ?? null, x: origin.x + at.x, y: origin.y + at.y };
     });
     const color = playerColor(s.id, index, colors);
-    const town = { space: s.id, name: s.name, active: Boolean(s.active), remote: Boolean(s.machine), color, slot: colorSlot(s.id, index, colors), level, style: TOWN_STYLES[townStyle(hashStr(s.id))].name, stats: stats[s.id] ?? null, x: origin.x, y: origin.y, buildings, extras: townExtras(hashStr(s.id), level, [...buildings.map((b) => ({ x: b.x - origin.x, y: b.y - origin.y })), ...sites.forest, ...Object.values(sites.nodes)]).map((e) => {
+    const town = { space: s.id, name: hideNames ? townAlias(s.id, slots) : s.name, active: Boolean(s.active), remote: Boolean(s.machine), color, slot: colorSlot(s.id, index, colors), level, style: TOWN_STYLES[townStyle(hashStr(s.id))].name, stats: stats[s.id] ?? null, x: origin.x, y: origin.y, buildings, extras: townExtras(hashStr(s.id), level, [...buildings.map((b) => ({ x: b.x - origin.x, y: b.y - origin.y })), ...sites.forest, ...Object.values(sites.nodes)]).map((e) => {
       // Grown buildings take the same overrides as tab buildings, keyed by their id.
       const at = buildingPos[e.id] ?? e;
       return { ...e, kind: kinds[e.id] ?? e.kind, custom: Boolean(kinds[e.id]), x: origin.x + at.x, y: origin.y + at.y };
@@ -723,4 +723,15 @@ export const VIEWS = ["map", "split", "terminals"];
 export function nextView(v) {
   const i = VIEWS.indexOf(v);
   return VIEWS[((i < 0 ? 0 : i) + 1) % VIEWS.length]; // unknown counts as the default, map
+}
+
+// ---- hide names (Options → Hide names): for screenshots and screen sharing
+
+export const TOWN_ALIASES = ["Ashford", "Briarwood", "Coldwater", "Dunmore", "Eastholm", "Fairhaven", "Greystone", "Hollowmere", "Ironbridge", "Kingsreach", "Larkfield", "Millbrook", "Northwatch", "Oakridge", "Ravensworth", "Stonehaven", "Thornbury", "Westmarch"];
+
+/** A stable made-up town name for a space, so screenshots show no real workspace names. With
+ *  the town slots (unique per space), names never repeat until the list runs out. */
+export function townAlias(id, slots = null) {
+  const k = slots && slots[id] !== undefined ? Number(slots[id]) : hashStr(`alias:${id}`);
+  return TOWN_ALIASES[k % TOWN_ALIASES.length] + (slots && k >= TOWN_ALIASES.length ? ` ${Math.floor(k / TOWN_ALIASES.length) + 1}` : "");
 }

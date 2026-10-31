@@ -1,159 +1,38 @@
 # Herdr Empires
 
-A medieval real-time-strategy theme for the [Herdr](https://herdr.dev) desktop
-app. Agents become **units**, spaces become **towns**, tabs become
-**buildings**, and the window becomes an RTS HUD: a resource bar that counts
-real things, a command card, a selected-unit panel and a diamond minimap. Above
-the terminals, **the world**: an isometric map where each space is a town and
-each agent a villager who walks out to gather, rings the alarm when it needs
-you, and comes home when its task is done. A herald brings news from the front.
-Everything maps to a real Herdr command, and nothing from any commercial game
-ships here (SPEC §13). The world's art is rendered from **0 A.D.** models
-(Wildfire Games, CC BY-SA 3.0); see `CREDITS.md`.
-
-![Herdr Empires](preview.png)
-
-> `preview.png` is a real `herdr-app shot` of the Map view, taken by
-> `tools/demo/run-demo.sh` in a private demo (its own app home and herdr-core,
-> fake agents, generic names), with the shipped 0 A.D. pack.
-
-## Install
-
-```sh
-git clone https://github.com/cauldr0nx/herdr-empires
-cd herdr-empires
-tools/install.sh install --switch
+```
+Install Herdr Empires on my Herdr: clone https://github.com/cauldr0nx/herdr-empires to ~/.local/share/herdr-empires, read tools/install.sh, then run `sh ~/.local/share/herdr-empires/tools/install.sh install --switch`.
 ```
 
-The installer copies `layouts/empires.{json,svg}`, `themes/empires*.json`
-and `mods/empires/` into your Herdr app home (`$HERDR_APP_HOME`, else
-`~/.config/herdr-app`), merges the `layout:empires` keys into your
-`keys.json` (never replacing a binding you already have; it backs the file
-up first), runs `herdr-app check`, and switches to the layout. It refuses to
-overwrite any file of the same name that it did not install.
+A medieval RTS theme for [Herdr](https://herdr.dev). Your workspaces become towns,
+your agents become villagers who gather while they work, raise a **?** when they
+need you, and show a **✓** when they're done. Towns grow with each repo's commits
+and age.
 
-| Want | Do |
-|---|---|
-| Enter the theme | `ctrl-shift-l` (cycles layouts), Settings → Look → Herdr Empires, or `herdr-app do layout.switch --name empires` |
-| Leave it | `ctrl-shift-l` again, or Menu → Resign |
-| Only the colours on your normal layout | Settings → Look → theme `empires-parchment` (light) or `empires-dusk` (dark) |
-| Update | `tools/install.sh update` |
-| Remove | `tools/install.sh uninstall` |
-| Panic | `ctrl-alt-shift-escape` (Herdr's unbindable reset) |
+![Herdr Empires: towns on the map](media/map.png)
 
-## The world (SPEC §18)
+![A town up close, with agents asking and finishing](preview.png)
 
-- **Views** (the **Map / Split / Terminals** buttons in the top bar, `alt-w`, or
-  Menu → View): **Map** (the default: the world only; talk to units through
-  their chat windows), **Split** (the world over the terminals), **Terminals**
-  (no world).
-- **Units**: working agents walk between their tab's building and a resource
-  and gather there; blocked agents wait at the town center under a red alert;
-  finished ones wear a check until you look; idle ones stand about.
-- **Talk to a unit**: click it and a small chat window opens with its live
-  terminal; type to answer it. Drag it by its title bar; drag the gold mark in
-  its bottom-right corner to resize it. A click outside closes it unless it is
-  **Pinned**; **Full** fills the Herdr window (**Restore** goes back); **Pane**
-  jumps to the unit's own pane in Terminals view; × closes. `alt-c` opens a chat
-  for the focused unit (or the first that needs you), `alt-shift-c` pinned.
-- **Train units**: right-click a town center or any building for a menu of your
-  installed agents; pick one to start it in that space (or train with orders, or
-  open a shell). Click a town center for its space, a building for its tab.
-- **Move around**: drag the map; the scroll wheel zooms; **Centre** returns to
-  the current space's town.
-- **Options → World**: view, art pack, world zoom, and **Animate units** (off:
-  a still world that redraws only on change; calm mode implies it).
+## Use
 
-### Art packs
+- **Click a villager** to talk to it (a small window with its terminal). Drag the
+  window by its title bar, resize from its corner, **Pin** to keep it open.
+- **Right-click a building** to train a new agent there, move it, or change what it is.
+- **Drag** the map to look around, scroll to zoom.
+- **Map / Split / Terminals** in the top bar switch views. `ctrl-shift-l` leaves the
+  theme and comes back.
+- **Menu → Options → Hide names** swaps your workspace names for made-up town names,
+  for screenshots.
 
-The world reads all of its art through a pack (`pack.json`, SPEC §18.4):
-
-| Pack | Where | What |
-|---|---|---|
-| **0 A.D.** (shipped) | `mods/empires/packs/zeroad/` | Rendered from 0 A.D. models by `art/zeroad/` (CC BY-SA 3.0, Wildfire Games) |
-| **Local import** (optional) | `<app home>/empires-packs/local/` | Built on *your* machine from a game install *you* own, by `tools/install.sh import-local [--source DIR]`. Never shipped, never committed, never used for public screenshots. |
-
-Options → Art pack: **Auto** (a local import if present, else 0 A.D.), **0 A.D.**,
-or **Local import**. `tools/install.sh uninstall --purge` also removes local packs.
-
-## Keys (`layout:empires`)
-
-| Key | Action |
-|---|---|
-| `alt-w` | cycle the world view (split / map / terminals) |
-| `alt-c` | chat with the focused unit (or the first that needs you) |
-| `alt-shift-c` | the same, pinned (a window that stays open) |
-| `alt-.` | next idle or finished unit |
-| `alt-,` | next unit under attack (blocked) |
-| `alt-m` | game menu |
-| `alt-t` | train a unit (new agent tab) |
-| `alt-g` | garrison (settle) the current tab |
-| `ctrl-shift-h` | hide/show the HUD |
-| `f1` | tech tree (every key binding) |
-
-## What the HUD shows
-
-- **Food / Wood / Gold / Stone / Population**: agents working, idle, tasks
-  completed this session, agents blocked, live agents over a pop cap. Hover a
-  counter to read exactly what it counts; the mapping is configurable in
-  Options. Nothing is estimated.
-- **Ages**: Camp → Village → Keep → Crown as tasks complete (cosmetic, resets
-  each session, off in calm mode).
-- **Status everywhere**: amber shimmer = working, red pulse + crossed swords =
-  blocked (needs you), green laurel = done, gray = idle.
-
-## Development
-
-Requires Bun (generators, tests), ImageMagick/Chromium (contact sheets),
-FFmpeg (sounds). Users never run Bun: generated assets are committed.
+## Install by hand
 
 ```sh
-bun test                           # view-model tests (data.js)
-bun tools/check.ts mods/empires    # Bun stand-in for `herdr-app check`
-bun tools/asset-check.ts           # every asset has provenance and an allowed license
-bun tools/contrast.ts              # terminal palette contrast
-sh tools/hygiene-check.sh          # public-repo guard (also the pre-commit hook: tools/install-hooks.sh)
-sh tools/install-test.sh           # installer round-trip on a throwaway home
-bun art/generate.ts . && bun art/textures.ts . && bun art/sounds.ts .   # regenerate art (deterministic)
+git clone https://github.com/cauldr0nx/herdr-empires && cd herdr-empires
+sh tools/install.sh install --switch    # update: git pull && sh tools/install.sh update
+                                         # remove: sh tools/install.sh uninstall
 ```
 
-Always test against a throwaway app home: `HERDR_APP_HOME=$(mktemp -d)`.
-On a machine with Herdr, `sh tools/demo/run-demo.sh` builds a clean demo
-profile under Xvfb (towns `demo-api` and `demo-web`, fake agents from
-`tools/demo/fake-agent.sh` reporting every OSC 7501 status) and writes
-`herdr-app shot` screenshots to the gitignored `shots/` folder.
-See `SPEC.md` (the brief), `SPIKES.md` (what the Herdr API really does),
-`RECIPE.md` (the from-scratch build brief) and `CLAUDE.md` (rules for build
-agents).
+## Credits
 
-## Phase 2: the command layer
-
-Off by default (Options → Command layer). Turns the command card into unit
-orders on top of herdr-core (`hc`):
-
-| Order | Does |
-|---|---|
-| Train | unit type (Villager, Scout, Monk, Mason, Captain) + agent program + orders + town; a new building (`tab.new`) or a worker in the current one (`hc run` with labels). The installed template's standing orders are shown in full and sent first. |
-| Rally point | per town: the town's folder, or a new worktree per unit |
-| Send message | `hc send` exactly what you typed to the selected units |
-| Stop / Town bell | `hc interrupt` the selected units / every working unit in the town (confirms, names them) |
-| Garrison / Ungarrison | `tab.settle` / `tab.unsettle` |
-| Peek | `terminal.peek` a worker of the selected unit |
-| Disband | `terminal.kill` (always confirms, names the units) |
-| Queue | the town's production queue; auto-dispatch per town sends the next order when a unit goes idle, never to a blocked one; otherwise the herald asks |
-
-Selection: click a unit; shift-click dots on the minimap or buildings in the
-town overview to multi-select; `ctrl-shift-<digit>` assigns a control group,
-`alt-shift-<digit>` selects it (groups are pruned when units end). A
-Captain's workers show as a formation under it on the minimap and as
-portraits in its card. Every destructive or multi-unit order confirms and
-names its targets; messages to agents are what you typed or a template you
-read; nothing leaves the machine. `tools/install.sh install --templates`
-prints each unit template in full, asks which agent program they run, and
-asks before installing. Token/cost counters are not shown: no reliable local
-source exists yet, and the theme never estimates.
-
-## License
-
-Apache-2.0 (code, generated art and sounds). Fonts: SIL OFL 1.1, see
-`CREDITS.md` and `mods/empires/fonts/OFL.txt`.
+World art is rendered from [0 A.D.](https://play0ad.com) by Wildfire Games
+(CC BY-SA 3.0). Code is Apache-2.0. Details in [CREDITS.md](CREDITS.md).

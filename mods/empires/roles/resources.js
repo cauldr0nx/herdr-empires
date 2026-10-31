@@ -120,6 +120,8 @@ export default class Resources {
         return openDialog("options", { title: "Options" });
       case "view":
         return cycleView();
+      case "hide_names":
+        return setShared("empires.hideNames", shared("empires.hideNames") !== true);
       case "chat":
       case "chat_pinned": {
         // Talk to the focused unit, else the first one that needs you, else the first unit.

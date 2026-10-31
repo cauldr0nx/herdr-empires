@@ -7,7 +7,7 @@ import { div, image } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { spaces, panes, terminals, focused, run, home, shared, setShared, agents } from "herdr";
 import { C, ASSETS, FONT_SC, unit, root, stone, heading, programIcon, statusBar, statusBadge, label, own, glyph } from "../kit.js";
-import { unitName, placeName, tabLabel, locationLine, tabPosition, subAgents, isAgentPane, elapsed, playerColor, selectedUnits, nameTargets, toggleSelected } from "../data.js";
+import { unitName, placeName, tabLabel, locationLine, townAlias, tabPosition, subAgents, isAgentPane, elapsed, playerColor, selectedUnits, nameTargets, toggleSelected } from "../data.js";
 import { queueLine, commandMode } from "./queue.js";
 
 const BUILDING = (t) => (t.status === "blocked" ? "tower" : t.settled ? "garrison" : "house");
@@ -38,7 +38,8 @@ export default class Selection {
     const workers = p.terminal ? subAgents(terminals(), p.terminal) : [];
     const tab = town?.tab;
     const since = tab?.working_since;
-    const where = locationLine(town?.space?.name, placeName(p.cwd, home()), p.branch);
+    // Hide names: only a made-up town name, no folder or branch.
+    const where = shared("empires.hideNames") === true ? (town?.space ? townAlias(town.space.id, shared("empires.townSlots")) : "") : locationLine(town?.space?.name, placeName(p.cwd, home()), p.branch);
     const color = town ? playerColor(town.space.id, town.index, shared("space.colors")) : C.idle;
     return h_flex()
       .size_full()
@@ -57,7 +58,7 @@ export default class Selection {
           .flex_1()
           .min_w(0)
           .gap(u(2))
-          .child(h_flex().items_center().gap(u(6)).child(heading(u, unitName(p), { size: 13 })).child(div().truncate().text_color(C.textDim).child(tabLabel(tab) ? `“${tabLabel(tab)}”` : "")))
+          .child(h_flex().items_center().gap(u(6)).child(heading(u, unitName(p), { size: 13 })).child(div().truncate().text_color(C.textDim).child(tabLabel(tab) && shared("empires.hideNames") !== true ? `“${tabLabel(tab)}”` : "")))
           .child(div().truncate().text_size(u(12)).text_color(C.text).child(where || "—"))
           .when(Boolean(status), (el) =>
             el.child(
@@ -118,7 +119,7 @@ export default class Selection {
           .items_center()
           .gap(u(6))
           .child(div().w(u(10)).h(u(10)).bg(color).border(u(1)).border_color(C.stone.dark))
-          .child(heading(u, space.name, { size: 13 }))
+          .child(heading(u, shared("empires.hideNames") === true ? townAlias(space.id, shared("empires.townSlots")) : space.name, { size: 13 }))
           .child(div().text_color(C.textDim).text_size(u(11.5)).child([space.machine ? `realm ${space.machine}` : null, space.branch].filter(Boolean).join(" · ")))
           .child(div().flex_1())
           .child(div().text_size(u(11)).font_family(FONT_SC).text_color(C.textDim).child(`${space.tabs.length} building${space.tabs.length === 1 ? "" : "s"}`)),
@@ -155,7 +156,7 @@ export default class Selection {
                   .tooltip(`${a.program?.name ?? "Unit"} in ${a.space_name} / ${a.tab_name}: ${a.status}. Click to go there`)
                   .on_click(() => run("agent.focus", { terminal: a.address }))
                   .child(programIcon(u, a.program, 16))
-                  .child(div().text_size(u(11)).text_color(C.text).child(`${a.space_name}/${a.tab_name}`))
+                  .child(div().text_size(u(11)).text_color(C.text).child(shared("empires.hideNames") === true ? townAlias(a.space, shared("empires.townSlots")) : `${a.space_name}/${a.tab_name}`))
                   .when(Boolean(statusBadge(u, a.status, 10)), (el) => el.child(statusBadge(u, a.status, 10))),
               ),
             ),
