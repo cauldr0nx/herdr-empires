@@ -421,21 +421,58 @@ export function sfx(name) {
   } catch {}
 }
 
-// ---- the layout's pixel sizes, kept whole at any zoom (SPEC §5.2, R9)
+// ---- the layout's pixel sizes, kept whole at any zoom (SPEC §5.2, R9), and
+// the narrow (< 900 px) two-row HUD (SPEC §5.1).
 
-export const FIT = { resources: 34, hud: 150, command: 260, minimap: 220, header: 26, border: 3 };
+export const FIT = { resources: 34, hud: 150, hudNarrow: 232, command: 260, minimap: 220, header: 26, border: 3, selectionNarrow: 78 };
 
-/** Sizes the layout's bars in design px for this zoom and scale; true if it changed. */
-export function fitLayout() {
+function findNode(n, id) {
+  if (!n || typeof n !== "object") return null;
+  if (n.id === id) return n;
+  for (const c of n.children ?? []) {
+    const f = findNode(c, id);
+    if (f) return f;
+  }
+  return null;
+}
+
+/**
+ * Sizes the layout's bars in design px for this zoom and scale, and swaps the
+ * HUD between its wide row and the narrow two-row tree; true if it changed.
+ * Only on our own layout (shared("layout") === "empires"); Herdr drops unknown
+ * fields such as x_empires from layout(), so the guard is the layout's name.
+ */
+export function fitLayout(narrow = false) {
+  if (shared("layout") !== "empires") return false;
   const l = layout();
-  if (!l || typeof l !== "object" || !l.x_empires) return false;
+  if (!l || typeof l !== "object" || !findNode(l, "hud")) return false;
   const k = scale() / zoom();
   const want = (n) => Math.round(n * k * 1000) / 1000;
-  const hidden = shared("empires.hud") === "hidden";
   let changed = false;
+  const hud = findNode(l, "hud");
+  const isNarrowTree = hud.type === "column";
+  if (narrow !== isNarrowTree) {
+    const command = findNode(hud, "command") ?? { id: "command", type: "block", content: { mod: "empires", props: { role: "command" } } };
+    const selection = findNode(hud, "selection") ?? { id: "selection", type: "block", content: { mod: "empires", props: { role: "selection" } } };
+    const minimap = findNode(hud, "minimap") ?? { id: "minimap", type: "block", content: { mod: "empires", props: { role: "minimap" } } };
+    delete selection.size;
+    if (narrow) {
+      selection.size = { px: want(FIT.selectionNarrow) };
+      hud.type = "column";
+      hud.children = [selection, { id: "hudrow", type: "row", resizable: false, children: [command, minimap] }];
+      hud.size = { px: want(FIT.hudNarrow) };
+    } else {
+      hud.type = "row";
+      hud.children = [command, selection, minimap];
+      hud.size = { px: want(FIT.hud) };
+    }
+    changed = true;
+  }
   const visit = (n) => {
     if (!n || typeof n !== "object") return;
-    const target = FIT[n.id];
+    let target = FIT[n.id];
+    if (n.id === "hud") target = narrow ? FIT.hudNarrow : FIT.hud;
+    if (n.id === "selection") target = narrow ? FIT.selectionNarrow : null;
     if (target && Math.abs((n.size?.px ?? 0) - want(target)) > 0.01) {
       n.size = { px: want(target) };
       run("layout.resize", { id: n.id, px: n.size.px });

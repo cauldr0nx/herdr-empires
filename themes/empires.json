@@ -8,6 +8,7 @@
     "#6b5f4c", "#ee7a62", "#a9d56a", "#edc45f", "#8fb0ee", "#c99ae4", "#7ed6cd", "#f1e6c8"
   ],
   "colors": {
+    "x_empires": "#000000",
     "surface": "#1f1c17",
     "canvas": "#1f1c17",
     "chrome": "#2e1f12",

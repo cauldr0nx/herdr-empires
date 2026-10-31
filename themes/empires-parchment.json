@@ -8,6 +8,7 @@
     "#4f452f", "#b63c28", "#3d7022", "#865f10", "#3b5fb5", "#844ba6", "#1e716c", "#3d382f"
   ],
   "colors": {
+    "x_empires": "#000000",
     "accent": "#8a5f0d",
     "working": "#b67c12",
     "blocked": "#c2402a",

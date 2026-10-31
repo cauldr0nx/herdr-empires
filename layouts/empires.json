@@ -1,28 +1,47 @@
 {
   "id": "root",
+  "title": "Herdr Empires",
   "type": "column",
   "titlebar": "none",
-  "traffic_lights": [14, 10],
+  "traffic_lights": [
+    14,
+    10
+  ],
   "theme": "empires",
   "font": "JetBrains Mono",
   "ui_font": "Alegreya Sans",
   "background": "#1f1c17",
-  "terminal_padding": [6, 4],
+  "terminal_padding": [
+    6,
+    4
+  ],
   "terminal_opacity": 1,
   "preview": "layouts/empires.svg",
-  "x_empires": { "version": "0.1.0" },
+  "x_empires": {
+    "version": "0.1.0"
+  },
   "children": [
     {
       "id": "resources",
       "type": "block",
-      "size": { "px": 34 },
+      "size": {
+        "px": 34
+      },
       "window_drag": true,
-      "content": { "mod": "empires", "props": { "role": "resources" } }
+      "content": {
+        "mod": "empires",
+        "props": {
+          "role": "resources"
+        }
+      }
     },
     {
       "id": "field",
       "type": "row",
-      "padding": [8, 8],
+      "padding": [
+        8,
+        8
+      ],
       "children": [
         {
           "id": "main",
@@ -34,10 +53,21 @@
               "radius": 0,
               "background": "background",
               "lone": true,
-              "border": { "width": 3, "color": "#4f341c" },
-              "focus": { "width": 3, "color": "#b8922a" },
+              "border": {
+                "width": 3,
+                "color": "#4f341c"
+              },
+              "focus": {
+                "width": 3,
+                "color": "#b8922a"
+              },
               "header": {
-                "content": { "mod": "empires", "props": { "role": "banner" } },
+                "content": {
+                  "mod": "empires",
+                  "props": {
+                    "role": "banner"
+                  }
+                },
                 "height": 26,
                 "position": "top",
                 "reveal": "always"
@@ -49,7 +79,12 @@
       "floating": [
         {
           "id": "herald",
-          "content": { "mod": "empires", "props": { "role": "herald" } },
+          "content": {
+            "mod": "empires",
+            "props": {
+              "role": "herald"
+            }
+          },
           "edge": "left",
           "align": "end"
         }
@@ -58,12 +93,47 @@
     {
       "id": "hud",
       "type": "row",
-      "size": { "px": 150 },
+      "size": {
+        "px": 150
+      },
       "resizable": false,
       "children": [
-        { "id": "command", "type": "block", "size": { "px": 260 }, "content": { "mod": "empires", "props": { "role": "command" } } },
-        { "id": "selection", "type": "block", "content": { "mod": "empires", "props": { "role": "selection" } } },
-        { "id": "minimap", "type": "block", "size": { "px": 220 }, "content": { "mod": "empires", "props": { "role": "minimap" } } }
+        {
+          "id": "command",
+          "type": "block",
+          "size": {
+            "px": 260
+          },
+          "content": {
+            "mod": "empires",
+            "props": {
+              "role": "command"
+            }
+          }
+        },
+        {
+          "id": "selection",
+          "type": "block",
+          "content": {
+            "mod": "empires",
+            "props": {
+              "role": "selection"
+            }
+          }
+        },
+        {
+          "id": "minimap",
+          "type": "block",
+          "size": {
+            "px": 220
+          },
+          "content": {
+            "mod": "empires",
+            "props": {
+              "role": "minimap"
+            }
+          }
+        }
       ]
     }
   ]

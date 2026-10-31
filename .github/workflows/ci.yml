@@ -1,0 +1,28 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Hygiene guard (SPEC §15)
+        run: sh tools/hygiene-check.sh
+      - name: View-model tests
+        run: bun test
+      - name: Mod check (Bun stand-in for herdr-app check)
+        run: bun tools/check.ts mods/empires
+      - name: Asset provenance (SPEC §13.3)
+        run: bun tools/asset-check.ts
+      - name: Terminal contrast (SPEC §4.1)
+        run: bun tools/contrast.ts
+      - name: Generators are deterministic
+        run: |
+          bun art/generate.ts . && bun art/textures.ts .
+          git diff --exit-code -- mods/empires/icons mods/empires/img layouts/empires.svg
+      - name: Installer round-trip on a throwaway app home
+        run: sh tools/install-test.sh

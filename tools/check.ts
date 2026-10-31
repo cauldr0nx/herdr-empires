@@ -106,7 +106,7 @@ if (existsSync(layoutPath)) {
     visit(layoutJson, "root");
     if (layoutJson.preview && !existsSync(join(appHome, layoutJson.preview))) warn(`layout: preview ${layoutJson.preview} missing`);
     if (typeof layoutJson.theme === "string" && !["graphite", "ink", "moss", "paper"].includes(layoutJson.theme) && !existsSync(join(appHome, "themes", `${layoutJson.theme}.json`))) fail(`layout: theme "${layoutJson.theme}" has no file`);
-    if (!layoutJson.x_empires?.version) warn(`layout: no x_empires.version marker (install.sh uses it)`);
+    if (layoutJson.title !== "Herdr Empires") warn(`layout: root title "Herdr Empires" is the install marker (Herdr drops x_empires on layout.set)`);
   } catch (e) {
     fail(`layout: ${e}`);
   }

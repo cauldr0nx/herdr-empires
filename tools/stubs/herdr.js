@@ -58,7 +58,7 @@ export const openOverlay = (spec) => {
 export const closeOverlay = (id) => { if (typeof id !== "string") throw new Error("closeOverlay: id must be a string"); return null; };
 export const notify = (n) => { if (!n || typeof n.title !== "string") throw new Error("notify: title"); log.notes.push(n); return "n1"; };
 export const props = () => instance.props;
-export const shared = (k) => (k in log.shared ? log.shared[k] : null);
+export const shared = (k) => (k in log.shared ? log.shared[k] : k === "layout" ? "empires" : null);
 export const setShared = (k, v) => { if (typeof k !== "string") throw new Error("setShared: key"); JSON.stringify(v); log.shared[k] = v; return null; };
 export const nextCommand = () => new Promise(() => {});
 export const watchFolder = () => new Promise(() => {});

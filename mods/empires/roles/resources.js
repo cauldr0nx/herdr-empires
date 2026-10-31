@@ -31,6 +31,7 @@ export default class Resources {
     this.zoom = null;
     this.scale = null;
     this.width = 0;
+    this.narrow = false;
     this.prev = null; // address -> status, for transitions
     this.now = Date.now();
     if (!shared("empires.session")) setShared("empires.session", { startedAt: Date.now(), completed: 0, age: 0 });
@@ -268,15 +269,16 @@ export default class Resources {
     const u = unit();
     const z = settings()?.zoom;
     const sc = shared("empires.scale");
-    if (z !== this.zoom || sc !== this.scale) {
+    const narrow = isNarrow(this.width / (u.k || 1));
+    if (z !== this.zoom || sc !== this.scale || (this.width > 0 && narrow !== this.narrow)) {
       this.zoom = z;
       this.scale = sc;
-      cx.spawn(async () => fitLayout());
+      this.narrow = narrow;
+      cx.spawn(async () => fitLayout(narrow));
     }
     this.track(cx);
     const w = appWindow();
     const mac = w?.platform === "macos";
-    const narrow = isNarrow(this.width / (u.k || 1));
     const session = shared("empires.session") ?? { startedAt: this.now, completed: 0 };
     const since = this.now - (Number(session.startedAt) || this.now);
     const res = resourceCounts(agents(), terminals(), session, shared("empires.resources"), shared("empires.popcap"));
