@@ -613,7 +613,7 @@ export function townSites(seed, buildings) {
  * agent), in world px. `activeSpace` goes to the origin. Units carry what the renderer needs:
  * where they live, where they go, their status and colour slot. Caps per SPEC §18.3.
  */
-export function worldModel({ spaces = [], agents = [], terminals = [], colors = null, maxUnits = 60, maxBuildings = 40, slots = null, townPos = {}, buildingPos = {}, kinds = {}, stats = {}, looks = ["villager"] } = {}) {
+export function worldModel({ spaces = [], agents = [], terminals = [], colors = null, maxUnits = 60, maxBuildings = 40, slots = null, townPos = {}, buildingPos = {}, kinds = {}, stats = {}, looks = ["villager"], minLevels = {} } = {}) {
   const active = spaces.findIndex((s) => s.active);
   const order = active > 0 ? [spaces[active], ...spaces.filter((_, i) => i !== active)] : spaces.slice();
   const towns = [];
@@ -624,7 +624,8 @@ export function worldModel({ spaces = [], agents = [], terminals = [], colors = 
     // Static map: a town keeps its slot (and any spot it was moved to) whatever is shown.
     const slot = slots && slots[s.id] !== undefined ? slots[s.id] : k;
     const origin = townPos[s.id] ? { x: townPos[s.id].x, y: townPos[s.id].y } : townOrigin(slot);
-    const level = townLevel(stats[s.id]);
+    // Growth never goes backwards: a town keeps the highest level it has reached.
+    const level = Math.max(townLevel(stats[s.id]), Math.min(9, Number(minLevels[s.id]) || 0));
     const tabs = (s.tabs ?? []).slice(0, Math.max(0, maxBuildings - buildingCount));
     buildingCount += tabs.length;
     const sites = townSites(hashStr(s.id), tabs.length);

@@ -390,3 +390,12 @@ describe("growing towns on a static map", () => {
     expect(D.worldModel({ spaces: sp, agents: ag, looks: ["villager", "villager_b", "villager_c"] }).units[0].look).toBe(w.units[0].look);
   });
 });
+
+describe("growth persists (SPEC §18.3)", () => {
+  test("a town never drops below the level it reached", () => {
+    const sp = [{ id: "a", name: "a", active: true, tabs: [] }];
+    expect(D.worldModel({ spaces: sp, stats: {} }).towns[0].level).toBe(0);
+    expect(D.worldModel({ spaces: sp, stats: {}, minLevels: { a: 7 } }).towns[0].level).toBe(7);
+    expect(D.worldModel({ spaces: sp, stats: { a: { commits: 5000, ageDays: 900 } }, minLevels: { a: 2 } }).towns[0].level).toBe(9);
+  });
+});

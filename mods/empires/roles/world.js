@@ -55,13 +55,17 @@ export default class World {
     this.t0 = {};
     // Camera: `base` is the world point drawn at the view's centre, `pan` a screen offset on
     // top (dragging only changes pan, so units' native loops never restart mid-drag).
-    this.base = null;
-    this.pan = { x: 0, y: 0 };
+    // Restored from the last session (shared state is saved by Herdr across restarts).
+    const cam = shared("empires.camera");
+    this.base = cam?.base && Number.isFinite(cam.base.x) ? { x: cam.base.x, y: cam.base.y } : null;
+    this.pan = cam?.pan && Number.isFinite(cam.pan.x) ? { x: cam.pan.x, y: cam.pan.y } : { x: 0, y: 0 };
     this.drag = null;
     this.dragEnd = 0;
-    this.wheel = 1; // scroll-wheel zoom, on top of Options → World zoom
+    this.wheel = Number(cam?.wheel) > 0 ? Number(cam.wheel) : 1; // scroll-wheel zoom, on top of Options → World zoom
     this.hover = null; // pointer, element px (for placing a building being moved)
-    this.stats = {}; // space id -> { commits, ageDays }
+    // Repo stats per space, cached across restarts so towns open at their real size at once:
+    // { commits, rootTs (first commit, ms), at (when read) }. A failed read keeps the cache.
+    this.stats = { ...obj("empires.townStats") };
     this.lastStatus = {};
     this.changedAt = {};
     this.reload(cx);
@@ -81,34 +85,64 @@ export default class World {
     });
   }
 
-  /** Commits and repo age per space (git, on the space's machine), for town levels. */
+  /** Commits and repo age per space (git, on the space's machine), for town levels. The
+   *  result is cached in shared state; a read that fails (a machine not connected yet, no
+   *  repo) keeps the cached numbers and retries soon, so a restart never shrinks a town. */
   refreshStats(cx) {
     cx.spawn(async (cx) => {
       const seen = obj("empires.townSeen");
-      let seenChanged = false;
+      let changed = false;
+      let failed = false;
       for (const s of spaces()) {
         if (!seen[s.id]) {
           seen[s.id] = Date.now();
-          seenChanged = true;
+          changed = true;
         }
         const tabIds = new Set(s.tabs.map((t) => t.id));
         const cwd = s.folder || panes().find((p) => tabIds.has(p.tab) && p.cwd)?.cwd || null;
-        let commits = 0;
-        let root = 0;
-        if (cwd) {
-          try {
-            const r = await exec("sh", ["-c", "git rev-list --count HEAD 2>/dev/null; git log --max-parents=0 --format=%ct HEAD 2>/dev/null | tail -1"], { cwd, on: s.machine ?? null });
-            const [c, t] = r.stdout.trim().split("\n");
-            commits = Number(c) || 0;
-            root = Number(t) || 0;
-          } catch {}
+        if (!cwd) continue;
+        try {
+          const r = await exec("sh", ["-c", "git rev-list --count HEAD 2>/dev/null; git log --max-parents=0 --format=%ct HEAD 2>/dev/null | tail -1"], { cwd, on: s.machine ?? null });
+          const [c, t] = r.stdout.trim().split("\n");
+          const commits = Number(c) || 0;
+          const rootTs = (Number(t) || 0) * 1000;
+          const old = this.stats[s.id] ?? {};
+          if (commits === 0 && (old.commits ?? 0) > 0) continue; // a hiccup, not a smaller repo
+          if (commits !== old.commits || rootTs !== (old.rootTs ?? 0)) {
+            this.stats[s.id] = { commits, rootTs, at: Date.now() };
+            changed = true;
+          }
+        } catch {
+          failed = true;
         }
-        const since = root ? root * 1000 : seen[s.id];
-        this.stats[s.id] = { commits, ageDays: Math.max(0, (Date.now() - since) / 86400000) };
       }
-      if (seenChanged) setShared("empires.townSeen", seen);
+      if (changed) {
+        setShared("empires.townSeen", seen);
+        setShared("empires.townStats", { ...this.stats });
+      }
+      if (failed) cx.timer.after(45000, (cx) => this.refreshStats(cx));
       cx.notify();
     });
+  }
+
+  /** Stats as the world model wants them: commits and age in days (from the first commit, or
+   *  from when the town was first seen). */
+  townStats() {
+    const seen = obj("empires.townSeen");
+    const now = Date.now();
+    const out = {};
+    for (const s of spaces()) {
+      const st = this.stats[s.id] ?? {};
+      const since = st.rootTs || seen[s.id] || now;
+      out[s.id] = { commits: st.commits ?? 0, ageDays: Math.max(0, (now - since) / 86400000) };
+    }
+    return out;
+  }
+
+  /** Saves the camera (where you dragged and zoomed to) for the next session. */
+  saveCamera() {
+    if (!this.base) return;
+    setShared("empires.camera", { base: { x: Math.round(this.base.x), y: Math.round(this.base.y) }, pan: { x: Math.round(this.pan.x), y: Math.round(this.pan.y) }, wheel: Math.round(this.wheel * 1000) / 1000 });
   }
 
   /** Units walk and play their frames unless calm mode or Options → Animate units is off. */
@@ -409,10 +443,15 @@ export default class World {
       townPos: obj("empires.townPos"),
       buildingPos: obj("empires.buildingPos"),
       kinds: obj("empires.buildingKinds"),
-      stats: this.stats,
+      stats: this.townStats(),
+      minLevels: obj("empires.townLevels"),
       looks: Array.isArray(this.pack.data.unitLooks) && this.pack.data.unitLooks.length ? this.pack.data.unitLooks : ["villager"],
     });
     const active = model.towns.find((t) => t.active) ?? model.towns[0];
+    // Remember each town's highest level, so growth survives restarts and slow repo reads.
+    const levels = obj("empires.townLevels");
+    if (model.towns.some((t) => t.level > (Number(levels[t.space]) || 0)))
+      cx.spawn(async () => setShared("empires.townLevels", { ...levels, ...Object.fromEntries(model.towns.filter((t) => t.level > (Number(levels[t.space]) || 0)).map((t) => [t.space, t.level])) }));
     // The camera starts on the shown space's town, then stays where you leave it.
     this.base ??= active ? { x: active.x, y: active.y } : { x: 0, y: 0 };
     const S = Math.max(0.45, Math.min(0.8, h / 440)) * (Number(shared("empires.worldZoom")) || 1) * this.wheel;
@@ -453,7 +492,10 @@ export default class World {
         cx.notify();
       })
       .on_mouse_up("left", () => {
-        if (this.drag?.moved) this.dragEnd = Date.now();
+        if (this.drag?.moved) {
+          this.dragEnd = Date.now();
+          this.saveCamera();
+        }
         this.drag = null;
       })
       .on_hover((hovered) => {
@@ -466,6 +508,7 @@ export default class World {
         this.base = { x: this.base.x - this.pan.x / S, y: this.base.y - this.pan.y / S };
         this.pan = { x: 0, y: 0 };
         this.wheel = Math.max(0.5, Math.min(2.2, this.wheel * (d > 0 ? 1.08 : 1 / 1.08)));
+        this.saveCamera();
         cx.notify();
       });
     const tiles = this.terrain(S, view, w, h, model.towns, pan);
@@ -622,6 +665,7 @@ export default class World {
                 this.base = active ? { x: active.x, y: active.y } : { x: 0, y: 0 };
                 this.pan = { x: 0, y: 0 };
                 this.wheel = 1;
+                this.saveCamera();
                 cx.notify();
               })
               .child("Centre"),
