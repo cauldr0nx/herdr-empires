@@ -1,23 +1,40 @@
 # Herdr Empires: specification
 
-> Status: **v0.1 draft spec, nothing built yet.** This single file is the
-> complete brief for building the project. A build agent should be able to
-> work from this file plus a Herdr install alone.
+> Status: **v0.2.** Phase 1 (HUD) and Phase 2 are built on branch
+> `claude/hopeful-dirac-dqzi6u` and were live-tested in a real Herdr. v0.2
+> adds the **world layer**: agents as units on an isometric map, drawn with
+> real RTS art from swappable art packs (§18). It also lists the bugs the live
+> test found (§19). This single file is the complete brief: a build agent
+> should be able to work from it plus a Herdr install alone.
 
 A medieval real-time-strategy total-conversion layout for the
 [Herdr](https://herdr.dev) desktop app (`herdr-app`, Apache-2.0). Agents
 become units, spaces become towns, tabs become buildings, and the window
 becomes an RTS HUD: resource bar, command card, selected-unit panel, diamond
-minimap. Phase 1 is a pure **look + navigation** layer. Phase 2 adds an
+minimap. Phase 1 is a pure **look + navigation** layer. **Phase 1.5 adds the
+world layer** (§18): an isometric map where each space is a town and each
+agent is a unit walking, gathering and raising alarms. Phase 2 adds an
 **RTS-style agent command layer** on top of herdr-core (`hc`) (§14).
 
-The look evokes classic medieval RTS games in general. It ships **none** of
-their art, audio, names or trademarks (§1, §13).
+**Fidelity goal (from live review):** it must read as a classic medieval RTS
+at first glance, with painted isometric terrain, real-looking buildings and
+units. The HUD chrome alone and code-drawn placeholder art were both
+rejected. Real art comes from **art packs** (§18.4): a shipped **0 A.D.**
+pack (CC BY-SA 3.0) and an optional, **local-only** pack that a converter
+builds from the user's own installed copy of AoE2 DE. The AoE2 pack never
+ships.
+
+The repository and every published artifact ship **none** of the
+commercial games' art, audio, names or trademarks (§1, §13). The local-only
+pack (§18.6) is generated on the user's machine from their own copy and
+stays there.
 
 **How to read this:** §16 is a primer on how Herdr can be restyled (read it
 first if you haven't built a Herdr layout before). §0–§11 are the Phase 1
 product and build spec. §13 covers assets and licensing, §14 orchestration
 (Phase 2), and §15 the public-repo hygiene rules, which are **mandatory**.
+**§18 (world layer + art packs) and §19 (live-test bugs) are the current
+work.**
 
 ---
 
@@ -36,7 +53,7 @@ product and build spec. §13 covers assets and licensing, §14 orchestration
    timer-driven animation; theme works at zoom 0.75–2 and on portrait monitors.
 
 **Non-goals (v1)**
-- Not a game. No units walking around a map in v1 (stretch, §12).
+- Not a game engine. The world layer (§18) is a live diorama of Herdr's state, with no pathfinding, combat or simulation.
 - No modification of Herdr itself; no reliance on undocumented APIs.
 - No network access by the mod in Phase 1 (keeps install review trivial).
 - No copying of the original game's art, audio, names or exact layout pixels.
@@ -499,7 +516,6 @@ shared keys that other mods might render in screenshots.
 5. No `setTimeout`/`setInterval`; no timers faster than 1 s; animations native only.
 
 ## 12. Stretch ideas (post-v1)
-- Ambient animated units walking between buildings on the minimap (native `.loop("left"/"top")` only).
 - Frame material upgrades with age.
 - Numeric quick-message taunts sent to the focused agent (Phase 2: "1" = "continue", "2" = "run the tests"…), with original audio.
 - Wonder timer: a timebox countdown per tab.
@@ -531,9 +547,11 @@ before a public release.)
 | D | MegaGlest data; Unknown Horizons media (per-file check) | CC BY-SA 3.0 | same | only by explicit decision |
 | ✗ | Widelands art (GPL), anything CC-NC, "free for personal use" fonts, Trajan, any original-game file | — | — | never |
 
-**Default: ship v1 with tiers A–C only.** If tier D is ever used, it lives in
-`mods/empires/assets-cc-by-sa/` with its own `LICENSE`, listed per file in
-`CREDITS.md`.
+**Decision (v0.2):** tier D **0 A.D.** is adopted as the shipped world-art
+source (§18.5). Its derived files live only in `mods/empires/packs/zeroad/`
+with its own `LICENSE` (CC BY-SA 3.0) and per-file credits in `CREDITS.md`.
+Everything outside that folder stays tiers A–C. The HUD may also take 0 A.D.
+UI textures and portraits, but those copies live in the pack folder too.
 
 ### 13.2 Asset list (v1)
 Design px at zoom 1; SVG where possible, else PNG @1x + @2x.
@@ -827,8 +845,269 @@ brief) and `preview.png`.
   arcane-agents https://github.com/thomasrice/arcane-agents ·
   peon-ping (sound-on-agent-events pattern) https://github.com/PeonPing/peon-ping
 - Name note: "agent-of-empires" is already used by two projects; keep ours distinct.
+- World-layer pipeline: openage asset conversion (SMX/SLD reference, Steam app id 813780) https://github.com/SFTtech/openage/blob/master/doc/media_convert.md ·
+  0 A.D. model import/animation guides https://trac.wildfiregames.com/wiki/Basic3DImplementation · https://trac.wildfiregames.com/wiki/AnimationExportTutorial ·
+  Blender COLLADA moved to legacy (removed in 5.0) https://devtalk.blender.org/t/moving-collada-i-o-to-legacy-status/34621 · assimp https://github.com/assimp/assimp
 
 **Trademark posture:** product name, UI strings, layout display name,
 preview and marketing never use "Age of Empires", "AoE", "Ensemble",
 "Forgotten Empires" or Microsoft/Xbox marks. Describe it as *a medieval RTS
 theme for Herdr*.
+
+---
+
+## 18. The world layer (Phase 1.5): agents as units
+
+### 18.1 What the person sees
+An isometric RTS map in the classic dimetric view (2:1 tiles): painted grass
+and dirt, forest edges, gold and stone mines, berry bushes. **Each space is a
+town:** a town center flying its player-colour banner, ringed by one building
+per tab. **Each agent is a unit:**
+- **Working:** a villager walks between its tab's building and a resource
+  node, plays its gather animation there, and walks back carrying the load.
+  This is "gathering".
+- **Blocked:** the unit stops at the town center, a red alert flag pulses
+  over it, the town bell icon shows, and the minimap pings. This is "under attack".
+- **Done:** the unit returns to the town center with a laurel or check badge
+  until the person looks at it.
+- **Idle:** the unit stands beside the town center. These are the "idle
+  villagers" that the idle button and `alt-.` cycle through.
+- **Sub-agents** (`terminals().parent`) are smaller units that follow their
+  parent in formation.
+
+Clicking a unit selects it, with a selection ellipse under its feet; the
+selection panel and banner follow it. Double-clicking opens its terminal.
+Right-clicking gives its order menu (Phase 2 orders when command mode is on).
+Clicking a town center selects that space.
+
+### 18.2 Where it lives in the layout
+The `field` node becomes a `stack`: `world` (`{mod: "empires", props: {role:
+"world"}}`) and `main` (the existing `tab: active` block). There are three view
+modes, cycled with `alt-w` (`empires.view`) and also offered in the game menu:
+
+| Mode | Shows |
+|---|---|
+| **Map** | the world fills the field; HUD and resource bar stay |
+| **Split** (default) | the world as a band above the terminals (≈35 % height, resizable), terminals below |
+| **Terminals** | today's layout, with no world |
+
+Split mode is a `column` holding `world` and `main`. Implement the modes by
+having the mod rewrite its own layout tree through `layout.set` (the
+`fitLayout` pattern; this is allowed because the layout is third-party).
+Double-clicking a unit in Map mode switches to Terminals with that pane
+focused, and `alt-w` returns. The minimap gains a viewport rectangle; clicking
+it pans the world camera.
+
+### 18.3 World model (pure functions in `data.js`, unit-tested)
+- **Map:** the active space's town sits at the camera center, with neighbour
+  towns placed around it on a deterministic spiral (seeded by space id, so
+  layouts are stable across restarts). Remote-machine towns sit across a river.
+- **Terrain:** generated per town from the seed: grass base, dirt around
+  buildings, a forest crescent on one side, one gold and one stone mine, and
+  berries. Tile size follows the pack (`tile: [w, h]`, AoE-style ≈ 96×48).
+- **Buildings:** one per tab, assigned by the tab's lead program through a
+  configurable table: shell-only tab → house; agent tab → workshop-type
+  building (lumber camp / mining camp / mill / university / monastery,
+  chosen by the hash of the tab id unless the program or the Phase 2 unit
+  type maps it explicitly). Settled (garrisoned) tabs show closed doors and
+  their units are hidden inside.
+- **Units:** one per agent. Unit class by program, or by Phase 2 template:
+  villager (default), scout (Scout), monk (Monk), builder villager (Mason),
+  knight or king (Captain). Shell panes aren't drawn by default (option:
+  "show shells as villagers").
+- **Resource node per working unit:** stable per tab (hash), so the same agent
+  always gathers at the same spot.
+- **Depth:** sprites are sorted by their foot `y`, then `x`, every render.
+- **Caps:** at most 60 units and 40 buildings drawn. Overflow collapses into
+  a "+N" banner at the town center.
+
+### 18.4 Art packs: one schema, swappable
+The world role and the HUD read art only through a **pack**. A pack is a
+folder with `pack.json`:
+
+```jsonc
+{
+  "name": "zeroad", "title": "0 A.D. (CC BY-SA 3.0)", "license": "CC-BY-SA-3.0",
+  "tile": [96, 48],
+  "terrain": { "grass": ["terrain/grass-0.png", "..."], "dirt": ["..."], "forest_floor": ["..."] },
+  "playerColors": ["blue", "red", "green", "yellow", "cyan", "purple", "gray", "orange"],
+  "entities": {
+    "villager": {
+      "anchor": [24, 44],                      // foot point inside a frame
+      "frame": [48, 52],
+      "anims": {                               // name -> per-direction frame lists
+        "idle":   { "fps": 6,  "dirs": 8, "sheet": "units/villager-idle-{color}.png", "frames": 8 },
+        "walk":   { "fps": 10, "dirs": 8, "sheet": "units/villager-walk-{color}.png", "frames": 12 },
+        "gather_wood": { "...": "..." }, "gather_gold": {}, "carry": {}, "build": {}
+      }
+    },
+    "town_center": { "anchor": [0, 0], "image": "buildings/town-center-{color}.png" },
+    "house": {}, "lumber_camp": {}, "mining_camp": {}, "mill": {}, "monastery": {}, "university": {},
+    "tree": { "variants": ["nature/tree-0.png", "..."] }, "gold_mine": {}, "stone_mine": {}, "berry_bush": {}
+  },
+  "ui": { "food": "ui/food.png", "wood": "ui/wood.png", "gold": "ui/gold.png", "stone": "ui/stone.png",
+          "population": "ui/pop.png", "portraits": { "villager": "ui/portrait-villager.png" } }
+}
+```
+
+- Every entity name the world needs has a **fallback chain** (e.g. `university
+  → monastery → house`), so a partial pack still works.
+- The pack is chosen in Options → Art pack: **Auto** (`aoe2de` if installed,
+  else `zeroad`), **0 A.D.**, or **AoE2 DE (local)**. Stored in
+  `shared("empires.pack")`.
+- Pack locations (paths relative to the app home, which is how `image()`
+  resolves them):
+  - shipped: `mods/empires/packs/zeroad/`
+  - local: `empires-packs/<name>/`. This is **outside** `mods/empires/`
+    because `install.sh update` prunes unknown files inside the mod folder.
+    The installer never touches `empires-packs/` except `uninstall --purge`.
+
+### 18.5 The shipped pack: rendered from 0 A.D.
+0 A.D. art and audio are CC BY-SA 3.0 (Wildfire Games). Units and buildings
+are 3D models (COLLADA `.dae` meshes in `art/meshes/`, animations in
+`art/animation/`, skeletons in `art/skeletons/`, assembled by actor XML in
+`art/actors/`). AoE2's own sprites were pre-rendered from 3D, so rendering
+0 A.D. models to sprites is the faithful route.
+
+Pipeline: `art/zeroad/`, run on a dev machine or the cloud agent. Its outputs
+are committed into `mods/empires/packs/zeroad/`.
+1. **Fetch** a pinned 0 A.D. release's `public` mod data, or the git mirror
+   at a pinned commit, by URL + sha256 into `art/sources/zeroad/`
+   (gitignored).
+2. **Choose actors** closest to the AoE2 look. 0 A.D. is antiquity, so prefer
+   the Briton, Gaul and Roman sets for buildings, and their citizen-soldier
+   or female-citizen gatherers as villagers. Evaluate the medieval 0 A.D. mod
+   *Millennium A.D.* as a better source, **only after verifying its license
+   is compatible** (CC BY-SA or freer).
+3. **Render** headless with Blender:
+   - Blender 5.0 removed COLLADA import, so either pin **Blender 4.5 LTS**
+     (legacy COLLADA importer) or convert `.dae` → glTF with **assimp**
+     first and use current Blender. Decide in spike R12.
+   - Parse the actor XML (meshes, props, textures, variants). Apply player
+     colour (0 A.D. player-colour materials use a texture mask) once per
+     each of the 8 colours.
+   - Use an orthographic camera at classic RTS dimetric (elevation ≈ 30°),
+     8 directions at 45°, a warm key light from the upper left, and a
+     transparent background with a separate soft shadow.
+   - Render the idle, walk, gather (wood/gold/stone/food), carry and build
+     animations at the pack fps.
+4. **Pack:** trim, pack per-animation sheets, compute anchors, write
+   `pack.json` and `pack.manifest.json` (source file → output, license,
+   author "Wildfire Games").
+5. **Terrain:** sample 0 A.D. terrain textures (`art/textures/terrain/`)
+   into seamless isometric diamond tiles. **UI:** copy resource icons
+   (`art/textures/ui/session/icons/resources/`) and portraits
+   (`ui/session/portraits/`), converting DDS → PNG if needed.
+6. **Credits:** `mods/empires/packs/zeroad/LICENSE` (CC BY-SA 3.0 text),
+   `CREDITS.md` lines naming Wildfire Games, https://www.wildfiregames.com/
+   and the CC link, and a note that the pack's derived images are CC BY-SA 3.0.
+
+Budget: keep the shipped pack under ~25 MB. Use WebP if `image()` supports
+it (verify), else optimized PNG.
+
+### 18.6 The local pack: built from the user's own AoE2 DE
+`tools/aoe2de-import/` is a converter, the approach openage takes. It
+contains **no game data**, only code that reads an installation the user owns.
+- **Find the install:** `--source DIR`, else Steam libraries
+  (`steamapps/common/AoE2DE`, plus each path in
+  `steamapps/libraryfolders.vdf`; Steam app id 813780), else common Windows
+  paths. Refuse to run if nothing is found. Never download game files.
+- **Read graphics** from `resources/_common/drs/graphics/` for a whitelist
+  of sprites: villager idle/walk/gather/carry/build, monk, scout, knight,
+  king, town center, house, mill, lumber camp, mining camp, university,
+  monastery, trees, gold/stone mines, berry bush.
+  - DE uses the **SMX** format and, after later patches, **SLD**. Implement
+    decoders from openage's format docs, using openage's converter code as
+    the reference. Detect the format per file.
+  - Apply player colour through the format's player-colour mask for all 8
+    colours.
+- **Terrain:** DDS textures in `resources/_common/terrain/textures/` → diamond tiles.
+- **Write** `empires-packs/aoe2de/` in the app home with the same `pack.json`
+  schema. Print exactly which files were read and written.
+- **Sounds** (Wwise banks) are out of scope for v1.
+- **Run it:** `tools/install.sh import-aoe2de [--source DIR]`, plus an
+  Options button that shows the command to run. The mod never runs the
+  importer by itself.
+- **Hygiene:** the converter's output is never committed, never used for
+  `preview.png` or any published screenshot (those use the `zeroad` pack),
+  and the hygiene check fails on `*.smx`, `*.sld`, `*.slp`, `*.drs`,
+  `*.dds` and any `empires-packs/` path inside the repo.
+
+### 18.7 Rendering and animation inside Herdr (spikes first)
+Herdr mods have no canvas, rotation or sprite API. What is available:
+absolute-positioned `image()` elements, `overflow_hidden` clipping, native
+`.loop("left"|"top"|"opacity", {from, to, period, easing})` (there-and-back),
+`.transition`, and `.frames(strings, ms)` (text only). A throwaway spike
+in the real app confirmed that absolute sprites over a terrain image, walking
+via paired `left`/`top` loops with `easing: "linear"`, a nested `top` loop
+for a walking bob, and click → `agent.focus` all work.
+
+| # | Question | Options, in preference order |
+|---|---|---|
+| R11 | **Sprite frame animation** without a per-frame script | (a) generate a **colour bitmap font** (CBDT/sbix/COLR) per pack whose private-use glyphs are the frames, then animate with `.frames(["","",…], ms)`, which is native with zero script cost; verify GPUI renders colour glyphs at the needed size. (b) a single strip image inside an `overflow_hidden` box, frame chosen by a timer at ≤ 8 fps, **only while the world is visible and the window is active**. (c) static pose + bob loop (the last-resort fallback). |
+| R12 | Blender pipeline: 4.5 LTS COLLADA vs. assimp → glTF → Blender 5 | the one that keeps 0 A.D. animations intact |
+| R13 | Walking direction: there-and-back loops can't flip a sprite | separate outbound and return sprites, with opacity loops at matching periods with `easing` tuned so the swap lands at the endpoints; else face the dominant direction |
+| R14 | Detecting world visibility (stack child hidden, Terminals mode) to stop timers | `on_size_change` reporting 0, or the mod's own view-mode state |
+| R15 | Cost: 60 units × 2–3 loops + 100 sprites | measure frame time with `herdr-app shot` timing and a CPU sample; reduce caps if needed |
+| R16 | Does `image()` accept WebP? | WebP if yes, else PNG |
+
+### 18.8 Milestones
+- **W0, spikes:** R11–R16 answered in `SPIKES.md` with evidence from a real
+  Herdr. Who runs these: the cloud container couldn't download Herdr, so
+  either allow `herdr.dev` and GitHub releases in its network policy or have a
+  human run `tools/demo/run-demo.sh` locally.
+- **W1, world role on placeholder data:** view modes; town and building
+  placement; units and status behaviours; selection; click / double-click /
+  right-click; minimap viewport. All of it uses the pack schema and a tiny
+  stub pack.
+- **W2, the 0 A.D. pack:** pipeline, rendered sprites in 8 colours, terrain,
+  UI icons, portraits, credits. The HUD's resource icons and portraits switch
+  to the pack.
+- **W3, the AoE2 DE importer:** SMX + SLD decoders with unit tests on small
+  synthetic files (never real game files in the repo), the Options pack
+  picker, and `install.sh import-aoe2de`.
+- **W4, polish:** depth sorting, overflow banners, calm mode (world static),
+  performance caps, a portrait-monitor layout.
+
+**Done when:** in a real Herdr with the `zeroad` pack, a stranger glancing at
+the window says "that's an RTS". With three fake agents (working / blocked /
+cycle) the units visibly gather, alarm and return within one status change.
+Clicking a unit opens its terminal. `herdr-app check`, `bun test` and every
+§11 gate pass. With the `aoe2de` pack imported locally, the same scene uses
+the original sprites, and `git status` shows nothing new.
+
+---
+
+## 19. Live-test results and fixes (real herdr-app 0.1.10, Linux)
+
+What passed in the real app: `herdr-app check` (throwaway home and real
+home), `bun run verify`, `tools/install-test.sh`, install → switch with no
+errors in `herdr-app status`, and the HUD, banners, menus, tech tree,
+options, herald, status colours and minimap rendering. **Fix these before
+W1:**
+
+1. `roles/banner.js`, `roles/selection.js`: `this.now` is set once in
+   `init()`, so "gathering Ns" never advances. Read `Date.now()` in `render()`
+   and run a ≥ 5 s timer only while some shown unit is working.
+2. The banner re-renders late. A branch change showed in the selection panel
+   well before the pane banner. Make sure the banner derives everything from
+   `panes()` in `render()` and nothing is cached in `init()`.
+3. The wood resource icon is invisible: `img/wood.svg` is the plank
+   **texture** and shares its name with the resource icon. Give resource icons
+   their own names (`img/res-*.svg`, or the pack's `ui.*`).
+4. Gold never counts tasks that finish via blocked → done or idle → done.
+   `completions()` must count any transition into `done` (from anything other
+   than `done`), plus working → idle. Add tests.
+5. The Stone counter and minimap alarm number are unreadable (red on red/brown,
+   plus a pulse). Use a light number on a red pill; pulse the pill, not the text.
+6. Tech tree dialog: the 4th column is clipped at the right with no scroll.
+   Wrap columns or add horizontal scroll, and size the dialog to the window.
+7. Herdr's own toasts are nearly unreadable on the `empires` palette (light
+   text on parchment `popover`). Fix the theme's foreground/popover pairing
+   for toasts, and keep toasts clear of the minimap if possible.
+8. Selection panel: an unnamed tab shows as `"1"`. Hide the tab name when
+   `named` is false.
+9. Selection location line repeats a name ("x · x · main") when the space name
+   equals the folder name. Dedupe.
+10. The herald float covers the terminal's bottom-left, including the agent's
+    prompt line. Make it a `peek` drawer, or dock it into the HUD.
