@@ -15,7 +15,7 @@
 import { div, image, PathBuilder } from "gpui-kit";
 import { spaces, agents, terminals, panes, shared, setShared, run, readTextFile, appHome, knownAgents, exec, window as appWindow } from "herdr";
 import { C, FONT_SC, DISPLAY, ASSETS, unit, root, calm, openMenu } from "../kit.js";
-import { worldModel, tripState, dirRow, animFallback, entityFallback, hashStr, assignSlots, BUILDING_KINDS, chunksIn, wildernessChunk } from "../data.js";
+import { worldModel, tripState, dirRow, animFallback, entityFallback, hashStr, assignSlots, BUILDING_KINDS, chunksIn, wildernessChunk, planKey, planTown, cachedPlan, rememberPlan } from "../data.js";
 import { setView, viewMode } from "./views.js";
 import { openUnitChat } from "./chat.js";
 
@@ -24,7 +24,8 @@ const LOCAL = "empires-packs/local";
 const FPS_CAP = 6;
 const SPEED = 55; // world px per second, walking
 const FLAT = new Set(["field"]);
-const STATS_EVERY = 10 * 60 * 1000; // repo stats (commits, age): gently
+const STATS_EVERY = 10 * 60 * 1000;
+const WILD_MAX = 420; // scenery pieces drawn at most (nearest the centre of the view first) // repo stats (commits, age): gently
 const KIND_LABEL = { house: "House", lumber_camp: "Lumber camp", mining_camp: "Mining camp", mill: "Mill", market: "Market", blacksmith: "Blacksmith", university: "University", monastery: "Monastery", defense_tower: "Defense tower", sentry_tower: "Sentry tower", corral: "Corral", fortress: "Fortress", wonder: "Wonder", field: "Farm field", palisade: "Palisade", palisade_corner: "Palisade corner", gate: "Gate" };
 
 /** Loads the chosen art pack: { base, data } or null. Auto prefers a local import. */
@@ -73,6 +74,7 @@ export default class World {
     cx.timer.every(STATS_EVERY, (cx) => this.refreshStats(cx));
     cx.timer.every(1000 / FPS_CAP, (cx) => {
       if (shared("empires.pack") !== this.packChoice) this.reload(cx);
+      this.backgroundWork(cx);
       if (this.animating() || shared("empires.moving")) cx.notify();
     });
   }
@@ -145,6 +147,51 @@ export default class World {
     setShared("empires.camera", { base: { x: Math.round(this.base.x), y: Math.round(this.base.y) }, pan: { x: Math.round(this.pan.x), y: Math.round(this.pan.y) }, wheel: Math.round(this.wheel * 1000) / 1000 });
   }
 
+  /**
+   * Town plans, kept off the render path: planning a big town is real work, and a render
+   * that runs long is cut off by Herdr ("could not be re-rendered"). A plan is answered from
+   * memory or this copy's storage (so a restart draws at once); a missing one is computed in
+   * a task, one town at a time, and the world redraws when it lands.
+   */
+  planFor(seed, level, style, tabs, cx) {
+    const key = planKey(seed, level, style, tabs);
+    const hit = cachedPlan(key);
+    if (hit) return hit;
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const plan = JSON.parse(stored);
+        rememberPlan(key, plan);
+        return plan;
+      }
+    } catch {}
+    // Queue it; the frame timer (outside render) does the work: nothing here may notify.
+    this.planQueue ??= new Map();
+    if (!this.planQueue.has(key)) this.planQueue.set(key, { seed, level, style, tabs });
+    // Meanwhile: the last plan this town had, if any, so it doesn't blink empty.
+    return this.lastPlan?.[seed] ?? null;
+  }
+
+  /** From the timer: plan one queued town per tick, and save what render noticed. */
+  backgroundWork(cx) {
+    let changed = false;
+    if (this.planQueue?.size) {
+      const [key, job] = this.planQueue.entries().next().value;
+      this.planQueue.delete(key);
+      const plan = planTown(job.seed, job.level, job.style, job.tabs);
+      (this.lastPlan ??= {})[job.seed] = plan;
+      try {
+        localStorage.setItem(key, JSON.stringify(plan));
+      } catch {}
+      changed = true;
+    }
+    if (this.pendingShared) {
+      for (const [k, v] of Object.entries(this.pendingShared)) setShared(k, v);
+      this.pendingShared = null;
+    }
+    if (changed) cx.notify();
+  }
+
   /** Units walk and play their frames unless calm mode or Options → Animate units is off. */
   moving() {
     return !calm() && shared("empires.animate") !== false;
@@ -215,8 +262,12 @@ export default class World {
     const a = toWorld(-200, -200), b = toWorld(w + 200, h + 300);
     const fauna = Array.isArray(this.pack.data.fauna) ? this.pack.data.fauna.filter((f) => ents[f]) : [];
     const tree = ents[entityFallback(ents, "tree")];
-    for (const [cx, cy] of chunksIn(a.x, a.y, b.x, b.y)) {
-      for (const it of wildernessChunk(cx, cy, towns, fauna)) {
+    const cxw = (a.x + b.x) / 2, cyw = (a.y + b.y) / 2;
+    let all = [];
+    for (const [cx, cy] of chunksIn(a.x, a.y, b.x, b.y)) for (const it of wildernessChunk(cx, cy, towns, fauna)) if (it.x > a.x && it.x < b.x && it.y > a.y && it.y < b.y) all.push(it);
+    if (all.length > WILD_MAX) all = all.sort((p, q) => Math.hypot(p.x - cxw, p.y - cyw) - Math.hypot(q.x - cxw, q.y - cyw)).slice(0, WILD_MAX);
+    {
+      for (const it of all) {
         if (it.kind === "animal") {
           const ent = ents[it.animal];
           if (!ent) continue;
@@ -476,7 +527,7 @@ export default class World {
     // Stable town slots: a new space takes the smallest free one; nothing moves when you switch.
     const all = spaces();
     const slots = assignSlots(all.map((s) => s.id), obj("empires.townSlots"));
-    if (Object.keys(slots).length !== Object.keys(obj("empires.townSlots")).length) cx.spawn(async () => setShared("empires.townSlots", slots));
+    if (Object.keys(slots).length !== Object.keys(obj("empires.townSlots")).length) (this.pendingShared ??= {})["empires.townSlots"] = slots;
     const model = worldModel({
       spaces: all,
       agents: agents(),
@@ -489,13 +540,18 @@ export default class World {
       stats: this.townStats(),
       minLevels: obj("empires.townLevels"),
       hideNames: shared("empires.hideNames") === true,
+      plan: (seed, level, style, tabs) => {
+        const p = this.planFor(seed, level, style, tabs, cx);
+        if (p) (this.lastPlan ??= {})[seed] = p;
+        return p;
+      },
       looks: Array.isArray(this.pack.data.unitLooks) && this.pack.data.unitLooks.length ? this.pack.data.unitLooks : ["villager"],
     });
     const active = model.towns.find((t) => t.active) ?? model.towns[0];
     // Remember each town's highest level, so growth survives restarts and slow repo reads.
     const levels = obj("empires.townLevels");
     if (model.towns.some((t) => t.level > (Number(levels[t.space]) || 0)))
-      cx.spawn(async () => setShared("empires.townLevels", { ...levels, ...Object.fromEntries(model.towns.filter((t) => t.level > (Number(levels[t.space]) || 0)).map((t) => [t.space, t.level])) }));
+      (this.pendingShared ??= {})["empires.townLevels"] = { ...levels, ...Object.fromEntries(model.towns.filter((t) => t.level > (Number(levels[t.space]) || 0)).map((t) => [t.space, t.level])) };
     // The camera starts on the shown space's town, then stays where you leave it.
     this.base ??= active ? { x: active.x, y: active.y } : { x: 0, y: 0 };
     const S = Math.max(0.45, Math.min(0.8, h / 440)) * (Number(shared("empires.worldZoom")) || 1) * this.wheel;

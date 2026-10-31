@@ -613,7 +613,7 @@ export function townSites(seed, buildings) {
  * agent), in world px. `activeSpace` goes to the origin. Units carry what the renderer needs:
  * where they live, where they go, their status and colour slot. Caps per SPEC §18.3.
  */
-export function worldModel({ spaces = [], agents = [], terminals = [], colors = null, maxUnits = 60, maxBuildings = 40, slots = null, townPos = {}, buildingPos = {}, kinds = {}, stats = {}, looks = ["villager"], minLevels = {}, hideNames = false } = {}) {
+export function worldModel({ spaces = [], agents = [], terminals = [], colors = null, maxUnits = 60, maxBuildings = 40, slots = null, townPos = {}, buildingPos = {}, kinds = {}, stats = {}, looks = ["villager"], minLevels = {}, hideNames = false, plan: planOf = null } = {}) {
   const active = spaces.findIndex((s) => s.active);
   const order = active > 0 ? [spaces[active], ...spaces.filter((_, i) => i !== active)] : spaces.slice();
   const towns = [];
@@ -632,7 +632,10 @@ export function worldModel({ spaces = [], agents = [], terminals = [], colors = 
     const seed = hashStr(s.id);
     const style = townStyle(seed);
     // The planner places everything on the tile grid (SPEC §18.3); overrides win after it.
-    const plan = planTown(seed, level, style, tabs.map((t) => ({ id: t.id, resource: resourceKind(t.id), kind: kinds[t.id] ?? null, house: Boolean(t.settled) || !mine.some((a) => a.tab === t.id) })));
+    const planTabs = tabs.map((t) => ({ id: t.id, resource: resourceKind(t.id), kind: kinds[t.id] ?? null, house: Boolean(t.settled) || !mine.some((a) => a.tab === t.id) }));
+    // `planOf` (the world role) may answer from a cache and plan in the background; tests and
+    // tools plan right here.
+    const plan = (planOf ? planOf(seed, level, style, planTabs) : planTown(seed, level, style, planTabs)) ?? EMPTY_PLAN;
     const buildings = tabs.map((t) => {
       const pb = plan.tabBuildings.find((b) => b.tab === t.id) ?? { kind: "house", x: 0, y: 160 };
       const at = buildingPos[t.id] ?? pb;
@@ -822,28 +825,61 @@ const planCache = new Map();
  * forest: [{ x, y, v }], mines: [{ kind, x, y }], nodes: { wood, gold, stone, food },
  * walls: null | { type, pieces: [{ part, x, y }] } }. Cached: the same inputs give the same plan.
  */
+/** The cache key of a plan: everything planTown depends on. */
+export function planKey(seed, level, style, tabs = [], tile = TILE) {
+  return `p2|${seed}|${level}|${style}|${tabs.map((t) => `${t.id}:${t.resource}:${t.kind ?? ""}:${t.house ? 1 : 0}`).join(",")}|${tile.w}x${tile.h}`;
+}
+
+/** A finished plan from the in-memory cache, or null (callers may compute it elsewhere). */
+export function cachedPlan(key) {
+  return planCache.get(key) ?? null;
+}
+
+/** Puts a plan (e.g. restored from storage) into the in-memory cache. */
+export function rememberPlan(key, plan) {
+  if (planCache.size > 64) planCache.clear();
+  planCache.set(key, plan);
+}
+
+/** A town with no plan yet: just its town center and its resources' rough spots. */
+export const EMPTY_PLAN = { tabBuildings: [], extras: [], forest: [], mines: [], nodes: { wood: { x: -300, y: 0 }, gold: { x: 300, y: 0 }, stone: { x: 0, y: 200 }, food: { x: 0, y: -160 } }, walls: null, pending: true };
+
 export function planTown(seed, level, style, tabs = [], tile = TILE) {
-  const key = `${seed}|${level}|${style}|${tabs.map((t) => `${t.id}:${t.resource}:${t.kind ?? ""}:${t.house ? 1 : 0}`).join(",")}|${tile.w}x${tile.h}`;
+  const key = planKey(seed, level, style, tabs, tile);
   if (planCache.has(key)) return planCache.get(key);
   const r = seeded(seed ^ 0x51ed270b);
-  const occ = new Set();
-  const free = (i, j) => !occ.has(`${i},${j}`);
+  // Occupancy as a flat byte grid (tiles -G..G): mods run in an interpreter, where string-keyed
+  // sets cost far more than array reads.
+  const G = 48, SIDE = 2 * G + 1;
+  const grid = new Uint8Array(SIDE * SIDE);
+  const idx = (i, j) => (i < -G || i > G || j < -G || j > G ? -1 : (i + G) * SIDE + (j + G));
+  const free = (i, j) => {
+    const k = idx(i, j);
+    return k >= 0 && grid[k] === 0;
+  };
+  const mark = (i, j) => {
+    const k = idx(i, j);
+    if (k >= 0) grid[k] = 1;
+  };
   const take = (i, j, n) => {
-    for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) occ.add(`${i + a},${j + b}`);
+    for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) mark(i + a, j + b);
   };
   const fits = (i, j, n, m) => {
     for (let a = -m; a < n + m; a++) for (let b = -m; b < n + m; b++) if (!free(i + a, j + b)) return false;
     return true;
   };
+  const occ = { add: (key) => { const [i, j] = key.split(",").map(Number); mark(i, j); } };
   const centre = (i, j, n) => ({ ci: i + (n - 1) / 2, cj: j + (n - 1) / 2 });
   // Spiral search for the free spot whose centre is nearest the anchor.
   const place = (n, near, m = 1, maxR = 30) => {
     const ai = Math.round(near.ci - (n - 1) / 2), aj = Math.round(near.cj - (n - 1) / 2);
     for (let rad = 0; rad <= maxR; rad++) {
       let best = null;
-      for (let di = -rad; di <= rad; di++)
-        for (let dj = -rad; dj <= rad; dj++) {
-          if (Math.max(Math.abs(di), Math.abs(dj)) !== rad) continue;
+      // Walk only the ring's perimeter (8·rad cells), keeping the nearest fit on it.
+      const ring = rad === 0 ? [[0, 0]] : [];
+      for (let t = -rad; t <= rad; t++) ring.push([t, -rad], [t, rad]);
+      for (let t = -rad + 1; t < rad; t++) ring.push([-rad, t], [rad, t]);
+      for (const [di, dj] of ring) {
           const i = ai + di, j = aj + dj;
           if (!fits(i, j, n, m)) continue;
           const c = centre(i, j, n);
@@ -1024,7 +1060,18 @@ export function inTown(x, y, towns, pad = 1050) {
  * One chunk's wilderness: [{ kind: tree|rocks|bush|tuft|berry_bush|gold_mine|stone_mine|animal,
  * x, y, v, animal? }]. `fauna` names the pack's animals (empty: no herds).
  */
+const wildCache = new Map();
 export function wildernessChunk(cx, cy, towns = [], fauna = []) {
+  const key = `${cx},${cy}|${fauna.join(",")}|${towns.map((t) => `${Math.round(t.x)},${Math.round(t.y)}`).join(";")}`;
+  const hit = wildCache.get(key);
+  if (hit) return hit;
+  const items = wildernessChunkFresh(cx, cy, towns, fauna);
+  if (wildCache.size > 400) wildCache.clear();
+  wildCache.set(key, items);
+  return items;
+}
+
+function wildernessChunkFresh(cx, cy, towns, fauna) {
   const r = seeded(hashStr(`wild:${cx},${cy}`));
   const ox = cx * CHUNK.w, oy = cy * CHUNK.h;
   const out = [];
