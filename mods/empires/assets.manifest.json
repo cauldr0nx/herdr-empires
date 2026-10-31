@@ -1,0 +1,666 @@
+{
+  "fonts/AlegreyaSans-Bold.ttf": {
+    "source": "google-fonts",
+    "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasans",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "license": "OFL-1.1",
+    "modified": false,
+    "notes": "OFL-AlegreyaSans.txt"
+  },
+  "fonts/AlegreyaSans-Italic.ttf": {
+    "source": "google-fonts",
+    "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasans",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "license": "OFL-1.1",
+    "modified": false,
+    "notes": "OFL-AlegreyaSans.txt"
+  },
+  "fonts/AlegreyaSans-Medium.ttf": {
+    "source": "google-fonts",
+    "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasans",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "license": "OFL-1.1",
+    "modified": false,
+    "notes": "OFL-AlegreyaSans.txt"
+  },
+  "fonts/AlegreyaSans-Regular.ttf": {
+    "source": "google-fonts",
+    "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasans",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "license": "OFL-1.1",
+    "modified": false,
+    "notes": "OFL-AlegreyaSans.txt"
+  },
+  "fonts/AlegreyaSansSC-Bold.ttf": {
+    "source": "google-fonts",
+    "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasanssc",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "license": "OFL-1.1",
+    "modified": false,
+    "notes": "OFL-AlegreyaSansSC.txt"
+  },
+  "fonts/AlegreyaSansSC-Regular.ttf": {
+    "source": "google-fonts",
+    "url": "https://github.com/google/fonts/tree/main/ofl/alegreyasanssc",
+    "author": "The Alegreya Sans Project Authors (Juan Pablo del Peral, Huerta Tipográfica)",
+    "license": "OFL-1.1",
+    "modified": false,
+    "notes": "OFL-AlegreyaSansSC.txt"
+  },
+  "fonts/Cinzel[wght].ttf": {
+    "source": "google-fonts",
+    "url": "https://github.com/google/fonts/tree/main/ofl/cinzel",
+    "author": "The Cinzel Project Authors (Natanael Gama)",
+    "license": "OFL-1.1",
+    "modified": false,
+    "notes": "variable font, weights 400-900; OFL-Cinzel.txt"
+  },
+  "fonts/OFL-AlegreyaSans.txt": {
+    "source": "google-fonts",
+    "url": "https://github.com/google/fonts/blob/main/ofl/alegreyasans/OFL.txt",
+    "author": "SIL International",
+    "license": "OFL-1.1",
+    "modified": false,
+    "notes": "license text"
+  },
+  "fonts/OFL-AlegreyaSansSC.txt": {
+    "source": "google-fonts",
+    "url": "https://github.com/google/fonts/blob/main/ofl/alegreyasanssc/OFL.txt",
+    "author": "SIL International",
+    "license": "OFL-1.1",
+    "modified": false,
+    "notes": "license text"
+  },
+  "fonts/OFL-Cinzel.txt": {
+    "source": "google-fonts",
+    "url": "https://github.com/google/fonts/blob/main/ofl/cinzel/OFL.txt",
+    "author": "SIL International",
+    "license": "OFL-1.1",
+    "modified": false,
+    "notes": "license text"
+  },
+  "fonts/OFL.txt": {
+    "source": "original",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": "index of the font licenses"
+  },
+  "icons/about.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/arrow-down.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/arrow-right.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/bell.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/build.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/check.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/chronicle.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/close.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/disband.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/expand.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/found.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/garrison.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/gear.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/group.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/help.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/herald.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/hourglass.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/idle.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/laurel.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/menu.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/mute.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/options.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/peek.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/queue.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/radio.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/rally.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/rename.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/resign.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/send.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/speaker.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/split-down.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/split-right.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/stop.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/swords.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/techtree.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/train.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/unit.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/unzoom.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/wait.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/win-close.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/win-max.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/win-min.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/win-restore.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/worker.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/worktree.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "icons/zoom.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/badge-blocked.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/badge-done.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/badge-idle.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/badge-working.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/food.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/frame-gold.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/frame.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/garrison.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/gold.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/house.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/logo.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/ornament.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/population.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/seal.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/stone.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/tower.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/town.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/wood.svg": {
+    "source": "generated",
+    "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  }
+}

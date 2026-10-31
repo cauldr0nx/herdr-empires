@@ -1,0 +1,11 @@
+Herdr Empires
+Copyright 2026 the Herdr Empires contributors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This layout adapts patterns (role router, drawing kit, fitLayout, boot screen,
+namespaced shared state, generated art and FFmpeg-synthesized sounds) from the
+"Herdr 98" layout shipped with the Herdr desktop app:
+  https://github.com/herdrdev/herdr-app  (Apache-2.0)
+No code or assets from any commercial game are included. See CREDITS.md for
+every third-party asset and its license.

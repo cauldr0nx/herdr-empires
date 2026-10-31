@@ -1,0 +1,51 @@
+# Herdr Empires: public repo. Never commit AI-assistant state, Herdr app state,
+# anything identifying a person or machine, or raw third-party downloads (SPEC §15).
+
+# AI-assistant transcripts and state
+.claude/
+*.jsonl
+CLAUDE.local.md
+.hygiene-local
+.cursor/
+.aider*
+
+# Herdr app / core state (only ever in a throwaway $HERDR_APP_HOME, never here)
+shared.json
+view.json
+session.json
+window.json
+windows.json
+installed.json
+seen.json
+update-notes.json
+update-notes-cache.md
+update-notes-media/
+telemetry/
+data/
+layouts/.state/
+*.log
+*.sock
+*.error
+*.reset-*
+*.bak-*
+*.old-*
+*.corrupt-*
+herdr-shot.png
+AGENTS.md
+herdr.d.ts
+gpui-kit.d.ts
+jsconfig.json
+.empires-home/
+
+# Raw downloads, contact sheets, scratch screenshots
+art/sources/
+art/out/
+shots/
+sheet.png
+
+# Tooling
+node_modules/
+bun.lock
+bun.lockb
+.DS_Store
+Thumbs.db

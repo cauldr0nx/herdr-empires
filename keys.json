@@ -1,0 +1,11 @@
+{
+  "layout:empires": {
+    "alt-.": "empires.idle",
+    "alt-,": "empires.alarm",
+    "alt-m": "empires.menu",
+    "alt-t": "empires.train",
+    "alt-g": "empires.garrison",
+    "ctrl-shift-h": "empires.toggle_hud",
+    "f1": "empires.techtree"
+  }
+}

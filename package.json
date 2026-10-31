@@ -1,0 +1,17 @@
+{
+  "name": "herdr-empires",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A medieval RTS theme for the Herdr desktop app: agents become units, spaces become towns.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "check": "bun tools/check.ts mods/empires",
+    "assets": "bun tools/asset-check.ts",
+    "hygiene": "sh tools/hygiene-check.sh",
+    "contrast": "bun tools/contrast.ts",
+    "art": "bun art/generate.ts && bun art/textures.ts && bun art/sounds.ts",
+    "verify": "bun test && bun tools/check.ts mods/empires && bun tools/asset-check.ts && sh tools/hygiene-check.sh"
+  }
+}
