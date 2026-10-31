@@ -489,38 +489,56 @@ export function townLevel(stats = {}) {
   return Math.max(0, Math.min(9, Math.floor(score / 1.6)));
 }
 
-/** What each level adds around the town center, cumulatively (a base that grows like a classic RTS town). */
-export const LEVEL_GROWTH = [
-  ["house"],
-  ["field", "house"],
-  ["mill", "field"],
-  ["lumber_camp", "house", "palisade"],
-  ["market", "house"],
-  ["blacksmith", "defense_tower", "field"],
-  ["sentry_tower", "corral", "house"],
-  ["university", "monastery", "palisade"],
-  ["fortress", "defense_tower"],
-  ["wonder"],
-];
+/** A town's personality, from its id: what it builds most as it grows. */
+export const TOWN_STYLES = {
+  farm: { name: "farming", pool: ["field", "field", "mill", "corral", "field", "house", "market"] },
+  war: { name: "military", pool: ["defense_tower", "palisade", "sentry_tower", "blacksmith", "corral", "palisade_corner", "gate", "fortress"] },
+  trade: { name: "trade", pool: ["market", "house", "blacksmith", "lumber_camp", "market", "mill", "house"] },
+  faith: { name: "faith", pool: ["monastery", "house", "field", "university", "sentry_tower", "house"] },
+};
+export function townStyle(seed) {
+  const keys = Object.keys(TOWN_STYLES);
+  return keys[(seed >>> 0) % keys.length];
+}
+
+/** The level a building kind needs before a town may build it (grander things come later). */
+export const UNLOCK = { house: 0, field: 0, mill: 1, lumber_camp: 1, corral: 2, palisade: 2, palisade_corner: 3, gate: 3, market: 3, blacksmith: 3, defense_tower: 4, sentry_tower: 4, monastery: 5, university: 5, fortress: 7, wonder: 9 };
 
 /**
- * The town's grown buildings (decor, not tabs) for a level: kinds from LEVEL_GROWTH, placed
- * on outer rings seeded by the space, so no two towns look alike. Positions are relative to
- * the town center, world px; `taken` are the tab buildings' spots to keep clear of.
+ * The town's grown buildings (decor, not tabs) for a level, shaped by the town's style: about
+ * 2-3 per level, roughly half from the style's pool, a third houses, the rest anything the
+ * level has unlocked; a fortress near the centre from level 7 and a wonder at 9. Placed on
+ * rings seeded by the space, clear of `taken` (tab buildings, forest, resources), so no two
+ * towns look alike. Positions are relative to the town center, world px.
  */
 export function townExtras(seed, level, taken = []) {
   const r = seeded(seed ^ 0x9e3779b9);
-  const kinds = LEVEL_GROWTH.slice(0, Math.max(0, level) + 1).flat();
+  const style = TOWN_STYLES[townStyle(seed)];
+  const unlocked = (k) => (UNLOCK[k] ?? 0) <= level;
+  const general = Object.keys(UNLOCK).filter((k) => unlocked(k) && k !== "wonder" && k !== "fortress");
+  const count = 1 + Math.round(Math.max(0, level) * 2.6);
+  const kinds = [];
+  if (level >= 7) kinds.push("fortress");
+  if (level >= 9) kinds.push("wonder");
+  let pi = Math.floor(r() * style.pool.length);
+  while (kinds.length < count) {
+    const roll = r();
+    let k = roll < 0.5 ? style.pool[pi++ % style.pool.length] : roll < 0.82 ? "house" : general[Math.floor(r() * general.length)];
+    if (!unlocked(k)) k = r() < 0.5 ? "house" : "field";
+    kinds.push(k);
+  }
   const out = [];
   const spots = [...taken];
   kinds.forEach((kind, i) => {
+    // Great buildings stand near the centre; the rest spread over growing rings.
+    const near = kind === "fortress" || kind === "wonder";
     let best = null;
-    for (let tries = 0; tries < 24; tries++) {
+    for (let tries = 0; tries < 28; tries++) {
       const a = r() * Math.PI * 2;
-      const rad = 300 + Math.floor(i / 6) * 110 + r() * 120 + tries * 12;
+      const rad = near ? 330 + tries * 14 : 300 + Math.floor(i / 7) * 115 + r() * 130 + tries * 12;
       const p = { x: Math.round(Math.cos(a) * rad), y: Math.round(Math.sin(a) * rad * 0.5) + 20 };
-      const clear = spots.every((q) => Math.hypot(p.x - q.x, (p.y - q.y) * 2) > 160);
-      if (clear) {
+      const room = near ? 230 : 160;
+      if (spots.every((q) => Math.hypot(p.x - q.x, (p.y - q.y) * 2) > room)) {
         best = p;
         break;
       }
@@ -617,7 +635,11 @@ export function worldModel({ spaces = [], agents = [], terminals = [], colors = 
       return { tab: t.id, name: t.name, kind: kinds[t.id] ?? buildingKind(t, inTab, level), custom: Boolean(kinds[t.id]), settled: Boolean(t.settled), status: t.status ?? null, x: origin.x + at.x, y: origin.y + at.y };
     });
     const color = playerColor(s.id, index, colors);
-    const town = { space: s.id, name: s.name, active: Boolean(s.active), remote: Boolean(s.machine), color, slot: colorSlot(s.id, index, colors), level, stats: stats[s.id] ?? null, x: origin.x, y: origin.y, buildings, extras: townExtras(hashStr(s.id), level, [...buildings.map((b) => ({ x: b.x - origin.x, y: b.y - origin.y })), ...sites.forest, ...Object.values(sites.nodes)]).map((e) => ({ ...e, x: origin.x + e.x, y: origin.y + e.y })), forest: sites.forest.map((f) => ({ ...f, x: origin.x + f.x, y: origin.y + f.y })), nodes: Object.fromEntries(Object.entries(sites.nodes).map(([k2, p]) => [k2, { x: origin.x + p.x, y: origin.y + p.y }])), hidden: 0 };
+    const town = { space: s.id, name: s.name, active: Boolean(s.active), remote: Boolean(s.machine), color, slot: colorSlot(s.id, index, colors), level, style: TOWN_STYLES[townStyle(hashStr(s.id))].name, stats: stats[s.id] ?? null, x: origin.x, y: origin.y, buildings, extras: townExtras(hashStr(s.id), level, [...buildings.map((b) => ({ x: b.x - origin.x, y: b.y - origin.y })), ...sites.forest, ...Object.values(sites.nodes)]).map((e) => {
+      // Grown buildings take the same overrides as tab buildings, keyed by their id.
+      const at = buildingPos[e.id] ?? e;
+      return { ...e, kind: kinds[e.id] ?? e.kind, custom: Boolean(kinds[e.id]), x: origin.x + at.x, y: origin.y + at.y };
+    }), forest: sites.forest.map((f) => ({ ...f, x: origin.x + f.x, y: origin.y + f.y })), nodes: Object.fromEntries(Object.entries(sites.nodes).map(([k2, p]) => [k2, { x: origin.x + p.x, y: origin.y + p.y }])), hidden: 0 };
     towns.push(town);
     mine.forEach((a, i) => {
       const b = buildings.find((x) => x.tab === a.tab);

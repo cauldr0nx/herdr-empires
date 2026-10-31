@@ -25,7 +25,7 @@ const FPS_CAP = 6;
 const SPEED = 55; // world px per second, walking
 const FLAT = new Set(["field"]);
 const STATS_EVERY = 10 * 60 * 1000; // repo stats (commits, age): gently
-const KIND_LABEL = { house: "House", lumber_camp: "Lumber camp", mining_camp: "Mining camp", mill: "Mill", market: "Market", blacksmith: "Blacksmith", university: "University", monastery: "Monastery", defense_tower: "Defense tower", sentry_tower: "Sentry tower", corral: "Corral", fortress: "Fortress", wonder: "Wonder" };
+const KIND_LABEL = { house: "House", lumber_camp: "Lumber camp", mining_camp: "Mining camp", mill: "Mill", market: "Market", blacksmith: "Blacksmith", university: "University", monastery: "Monastery", defense_tower: "Defense tower", sentry_tower: "Sentry tower", corral: "Corral", fortress: "Fortress", wonder: "Wonder", field: "Farm field", palisade: "Palisade", palisade_corner: "Palisade corner", gate: "Gate" };
 
 /** Loads the chosen art pack: { base, data } or null. Auto prefers a local import. */
 async function loadPack(choice) {
@@ -146,6 +146,19 @@ export default class World {
       .h(h * S);
     if (o.opacity) el = el.opacity(o.opacity);
     return el;
+  }
+
+  /**
+   * An interactive sprite: a box exactly the size of the picture, at its place, with the
+   * picture filling it. Mouse events (hover, click, right-click) only reach an element's own
+   * box, so a wrapper around an absolutely placed image would have no area and hear nothing.
+   */
+  spriteBox(id, ent, rel, slot, x, y, S, view, o = {}) {
+    const [w, h] = ent.size ?? [96, 96];
+    const [ax, ay] = ent.anchor ?? [w / 2, h];
+    let img = image(this.path(rel, slot)).size_full();
+    if (o.opacity) img = img.opacity(o.opacity);
+    return div().id(id).absolute().left(view.x(x) - ax * S).top(view.y(y) - ay * S).w(w * S).h(h * S).child(img);
   }
 
   /** One frame of a unit sheet, clipped: { el, w, h, ax, ay }. */
@@ -324,7 +337,7 @@ export default class World {
       if (building) {
         const kinds = obj("empires.buildingKinds");
         const pos = obj("empires.buildingPos");
-        const available = BUILDING_KINDS.filter((k) => entityFallback(ents, k) === k);
+        const available = [...BUILDING_KINDS, "field", "palisade", "gate"].filter((k) => entityFallback(ents, k) === k);
         items.push(
           { label: "&Move building", icon: "rally", act: { shared: ["empires.moving", { type: "building", tab: building.tab, kind: building.kind, town: town.space, slot: town.slot }] } },
           { label: "Change &type", icon: "build", sub: available.map((k) => ({ label: KIND_LABEL[k] ?? k, radio: true, checked: building.kind === k, act: { shared: ["empires.buildingKinds", { ...kinds, [building.tab]: k }] } })) },
@@ -337,7 +350,7 @@ export default class World {
           const { [building.tab]: _gone, ...rest } = pos;
           items.push({ label: "Reset position", act: { shared: ["empires.buildingPos", rest] } });
         }
-        items.push({ sep: true }, { label: `Show this tab`, icon: "house", act: { run: ["tab.select", { id: building.tab }] } });
+        if (!building.extra) items.push({ sep: true }, { label: `Show this tab`, icon: "house", act: { run: ["tab.select", { id: building.tab }] } });
       } else {
         const townPos = obj("empires.townPos");
         items.push({ label: "&Move town", icon: "rally", act: { shared: ["empires.moving", { type: "town", town: town.space, slot: town.slot }] } });
@@ -482,17 +495,25 @@ export default class World {
           tiles.push(this.sprite(ent, rel, town.slot, ex.x, ex.y, S, view));
           continue;
         }
-        items.push({ y: ex.y, el: div().id(`ex-${ex.id}`).tooltip(`${KIND_LABEL[ex.kind] ?? ex.kind}: ${town.name} is level ${town.level}${town.stats?.commits ? ` (${town.stats.commits} commits)` : ""}`).child(this.sprite(ent, rel, town.slot, ex.x, ex.y, S, view)) });
+        const asB = { tab: ex.id, kind: ex.kind, extra: true };
+        items.push({
+          y: ex.y,
+          el: this.spriteBox(`ex-${ex.id}`, ent, rel, town.slot, ex.x, ex.y, S, view, { opacity: isMoving(town, asB) ? 0.35 : null })
+            .tooltip(`${KIND_LABEL[ex.kind] ?? ex.kind}: part of ${town.name}, a level ${town.level} ${town.style} town${town.stats?.commits ? ` (${town.stats.commits} commits)` : ""}. Right-click to train units, move or change it`)
+            .on_mouse_down("right", (e, cx) => {
+              cx.stop_propagation();
+              if (!shared("empires.moving")) this.contextMenu(town, asB, e.position, cx);
+            }),
+        });
       }
       const tcName = entityFallback(ents, "town_center");
       if (tcName) {
         const tc = ents[tcName];
         items.push({
           y: town.y,
-          el: div()
-            .id(`tc-${town.space}`)
+          el: this.spriteBox(`tc-${town.space}`, tc, tc.image, town.slot, town.x, town.y, S, view, { opacity: isMoving(town) ? 0.35 : null })
             .cursor_pointer()
-            .tooltip(`${town.name}: town center, level ${town.level}. Click to show this space; right-click to train units or move the town`)
+            .tooltip(`${town.name}: town center · level ${town.level} ${town.style} town${town.stats?.commits ? ` · ${town.stats.commits} commits` : ""}. Click to show this space; right-click to train units or move the town`)
             .on_click(() => {
               if (!this.wasDrag() && !shared("empires.moving")) run("space.select", { id: town.space });
             })
@@ -500,7 +521,7 @@ export default class World {
               cx.stop_propagation();
               if (!shared("empires.moving")) this.contextMenu(town, null, e.position, cx);
             })
-            .child(this.sprite(tc, tc.image, town.slot, town.x, town.y, S, view, { opacity: isMoving(town) ? 0.35 : null })),
+
         });
       }
       town.buildings.forEach((b) => {
@@ -510,8 +531,7 @@ export default class World {
         const rel = ent.variants ? ent.variants[hashStr(b.tab) % ent.variants.length] : ent.image;
         items.push({
           y: b.y,
-          el: div()
-            .id(`bld-${b.tab}`)
+          el: this.spriteBox(`bld-${b.tab}`, ent, rel, town.slot, b.x, b.y, S, view, { opacity: isMoving(town, b) ? 0.35 : b.settled ? 0.8 : null })
             .cursor_pointer()
             .tooltip(`${KIND_LABEL[b.kind] ?? "Building"}: ${b.name ? `tab ${b.name}` : "a tab"}${b.settled ? " (garrisoned)" : ""}. Click to show it; right-click to train, move or change it`)
             .on_click(() => {
@@ -521,7 +541,7 @@ export default class World {
               cx.stop_propagation();
               if (!shared("empires.moving")) this.contextMenu(town, b, e.position, cx);
             })
-            .child(this.sprite(ent, rel, town.slot, b.x, b.y, S, view, { opacity: isMoving(town, b) ? 0.35 : b.settled ? 0.8 : null })),
+
         });
       });
       // Town banner under the town center: name, level, and "+N" when units overflow the cap.

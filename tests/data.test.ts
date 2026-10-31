@@ -353,6 +353,11 @@ describe("growing towns on a static map", () => {
     expect(D.townExtras(1, 3).length).toBeGreaterThan(D.townExtras(1, 1).length);
     expect(JSON.stringify(D.townExtras(1, 4))).not.toBe(JSON.stringify(D.townExtras(2, 4)));
     expect(D.townExtras(7, 9).some((e) => e.kind === "wonder")).toBe(true);
+    expect(D.townExtras(7, 6).some((e) => e.kind === "wonder" || e.kind === "fortress")).toBe(false);
+    // Towns of the same level but different styles build differently.
+    const mix = (seed) => D.townExtras(seed, 6).map((e) => e.kind).sort().join(",");
+    const seeds = [0, 1, 2, 3].map((k) => [...Array(40).keys()].find((n) => D.townStyle(n) === Object.keys(D.TOWN_STYLES)[k]));
+    expect(new Set(seeds.map(mix)).size).toBe(4);
   });
 
   test("slots are stable: new spaces take the smallest free slot", () => {
