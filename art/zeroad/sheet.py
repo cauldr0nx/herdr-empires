@@ -108,6 +108,26 @@ static("stone_mine", 8, 13)
 static("berry_bush", 6, 11)
 static("berry_bush", 7, 12, dx=10)
 
+# Decor and animals.
+for k, (ent, i, j) in enumerate([("rocks", 12, 4), ("rocks", 5, 13), ("bush", 9, 1), ("bush", 1, 9),
+                                 ("rocks", 13, 12), ("bush", 12, 8)]):
+    if ent in E:
+        static(ent, i, j, variant=k % len(E[ent]["variants"]))
+for k, (i, j) in enumerate([(2, 8), (9, 13), (13, 3), (4, 3), (10, 9), (6, 1)]):
+    if "tuft" in E:
+        e = E["tuft"]
+        im = img(e["variants"][k % len(e["variants"])])
+        fx, fy = foot(i, j)
+        scene.alpha_composite(im, (fx - e["anchor"][0], fy - e["anchor"][1]))
+for k, (ent, anim, d, i, j) in enumerate([("sheep", "idle", 1, 2, 13), ("sheep", "walk", 2, 3, 13),
+                                          ("boar", "walk", 5, 5, 1), ("chicken", "idle", 0, 9, 6)]):
+    if ent in E:
+        e = E[ent]
+        a_ = e["anims"][anim]
+        fw_, fh_ = e["frame"]
+        fr_ = img(a_["sheet"]).crop((0, d * fh_, fw_, (d + 1) * fh_))
+        fx, fy = foot(i, j)
+        put(fr_, e["anchor"], fx, fy)
 vfw, vfh = E["villager"]["frame"]
 vanc = E["villager"]["anchor"]
 units = [("walk", "blue", 1, 2, 7, 4), ("gather_wood", "blue", 2, 5, 2, 3), ("carry", "blue", 6, 3, 4, 5),
@@ -186,6 +206,81 @@ y += tiles.height + 10
 out.alpha_composite(icons, (100, y))
 y += icons.height + 10
 out.alpha_composite(tcs, (10, y))
+# Walls: a closed 3x2-tile rectangle per wall type, gates on two sides,
+# corners on the four vertices; checks slices join with no gaps.
+def wall_panel(kind):
+    w = pack["walls"][kind]
+    W2, H2 = 560, 420
+    pn = Image.new("RGBA", (W2, H2), (0, 0, 0, 255))
+    if ground:
+        for yy in range(0, H2, img(ground).height):
+            for xx in range(0, W2, img(ground).width):
+                pn.alpha_composite(img(ground), (xx, yy))
+    ox2, oy2 = W2 // 2 - 24, 150
+    def V(i, j):
+        return ox2 + (i - j) * 48, oy2 + (i + j) * 24
+    def mid(a, b):
+        return (a[0] + b[0]) // 2, (a[1] + b[1]) // 2
+    items = []
+    def piece(ent, fx, fy, key):
+        e = E[ent]
+        rel = e["image"].format(color="blue")
+        items.append((key, fx, fy, img(rel), e["anchor"]))
+    # axis A edges (i -> i+1) at j = 0 and j = 2; gate (2 tiles) on j = 2, i = 0..2
+    for i in range(3):
+        fx, fy = mid(V(i, 0), V(i + 1, 0)); piece(w["a"], fx, fy, fy)
+    fx, fy = V(1, 2); piece(w["gateA"], fx, fy, fy)
+    fx, fy = mid(V(2, 2), V(3, 2)); piece(w["a"], fx, fy, fy)
+    # axis B edges (j -> j+1) at i = 0 and i = 3; gate (2 tiles) on i = 3
+    for j in range(2):
+        fx, fy = mid(V(0, j), V(0, j + 1)); piece(w["b"], fx, fy, fy)
+    fx, fy = V(3, 1); piece(w["gateB"], fx, fy, fy)
+    for (i, j) in [(0, 0), (3, 0), (0, 2), (3, 2)]:
+        fx, fy = V(i, j); piece(w["corner"], fx, fy, fy + 0.5)
+    for key, fx, fy, im, (ax, ay) in sorted(items, key=lambda t: t[0]):
+        pn.alpha_composite(im, (fx - ax, fy - ay))
+    ImageDraw.Draw(pn).text((6, 6), f"walls: {kind} (3x2 tiles, gates A+B, corners)", fill=(255, 255, 255, 255))
+    return pn
+
+
+if "walls" in pack:
+    panels = [wall_panel(k) for k in pack["walls"]]
+    wp = Image.new("RGBA", (sum(p.width for p in panels), panels[0].height), (0, 0, 0, 255))
+    x = 0
+    for p_ in panels:
+        wp.alpha_composite(p_, (x, 0))
+        x += p_.width
+    big = Image.new("RGBA", (max(out.width, wp.width), out.height + wp.height + 10), (58, 64, 52, 255))
+    big.alpha_composite(out, (0, 0))
+    big.alpha_composite(wp, (0, out.height + 10))
+    out = big
+    os.makedirs(os.path.dirname(a.out), exist_ok=True)
+    wp.convert("RGB").save(a.out.replace(".png", "-walls.png"))
+
+# Fauna strips.
+if pack.get("fauna"):
+    rowsf = []
+    for an_name in pack["fauna"]:
+        e = E[an_name]
+        fw, fh = e["frame"]
+        st = Image.new("RGBA", (fw * 16, fh), (0, 0, 0, 0))
+        x = 0
+        for anim in ("idle", "walk"):
+            a_ = e["anims"][anim]
+            sheet_ = img(a_["sheet"])
+            for i in range(a_["frames"]):
+                st.alpha_composite(sheet_.crop((i * fw, fh, (i + 1) * fw, 2 * fh)), (x, 0))
+                x += fw
+        rowsf.append(st)
+    hf = sum(r.height for r in rowsf)
+    big = Image.new("RGBA", (max(out.width, max(r.width for r in rowsf)), out.height + hf + 10), (58, 64, 52, 255))
+    big.alpha_composite(out, (0, 0))
+    y = out.height + 10
+    for r in rowsf:
+        big.alpha_composite(r, (0, y))
+        y += r.height
+    out = big
+
 # Gallery: every building / nature image at final size on the ground.
 gal_names = [n for n, e in E.items() if "anims" not in e]
 items = []

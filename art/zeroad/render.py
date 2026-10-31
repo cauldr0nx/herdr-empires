@@ -31,9 +31,15 @@ AZIMUTH = math.radians(45.0)     # camera sits south-east of the subject... see 
 SS = 2                           # supersampling factor (compose.py downscales)
 
 # Final-size pixels per metre for each kind (0 A.D. metres, i.e. engine units).
-SCALE = {"unit": 13.0, "building": 8.6, "gaia": 8.6}
+SCALE = {"unit": 13.0, "fauna": 13.0, "building": 8.6, "gaia": 8.6, "wall": 8.6}
+# One 96x48 tile edge in metres at building scale: a ground vector along world
+# X (screen axis A, down-right) or Y (axis B, up-right) of length L projects to
+# (L cos45 * px/m, L cos45 sin30 * px/m), so 48 px across means:
+TILE_EDGE_PX = 48
+def tile_m(pxm):
+    return TILE_EDGE_PX / (math.cos(math.radians(45)) * pxm)
 # Per-entity overrides (final px/m).
-ENTITY_SCALE = {"tree_0": 6.5, "tree_1": 6.5, "tree_2": 6.5,
+ENTITY_SCALE = {"tree_0": 6.5, "tree_1": 6.5, "tree_2": 6.5, "tree_3": 6.5, "tree_4": 6.5, "tree_5": 6.5,
                 # The Briton wonder is a ~100 m ring fort; shrink it, but keep it
                 # the largest building.
                 "wonder": 7.0}
@@ -274,9 +280,12 @@ def srgb_to_linear(c):
 
 
 # ---------------------------------------------------------------- assembly
+IMPORT_UNITS = [True]  # per-entity override (some ColladaMax fauna files need False)
+
+
 def import_dae(rel):
     before = set(bpy.data.objects)
-    bpy.ops.wm.collada_import(filepath=os.path.join(ART, rel), import_units=True)
+    bpy.ops.wm.collada_import(filepath=os.path.join(ART, rel), import_units=IMPORT_UNITS[0])
     return [o for o in bpy.data.objects if o not in before]
 
 
@@ -497,9 +506,92 @@ def render_to(sc, outdir, index):
             print("MISSING output", src)
 
 
+def build_piece(parts, length, uniform, axis, offset=0.0):
+    """Assemble an actor, centre it, stretch its long (X) axis to `length`
+    metres (None: uniform only), scale the other axes by `uniform`, and lay it
+    along world X (axis a) or Y (axis b), centred `offset` metres along it."""
+    root, objs, arm = assemble(parts)
+    for o in list(objs):  # walls drop their ground decals (they would stack at joins)
+        if o.name.startswith("decal"):
+            objs.remove(o)
+            bpy.data.objects.remove(o, do_unlink=True)
+    bpy.context.view_layer.update()
+    pts_all = []
+    dg = bpy.context.evaluated_depsgraph_get()
+    for o in objs:
+        if o.type == "MESH":
+            oe = o.evaluated_get(dg)
+            pts_all += [oe.matrix_world @ mathutils.Vector(c) for c in oe.bound_box]
+    x0, x1 = min(p.x for p in pts_all), max(p.x for p in pts_all)
+    y0, y1 = min(p.y for p in pts_all), max(p.y for p in pts_all)
+    pivot = bpy.data.objects.new("pivot", None)
+    bpy.context.scene.collection.objects.link(pivot)
+    root.parent = pivot
+    root.matrix_parent_inverse = mathutils.Matrix.Identity(4)
+    root.location.x -= (x0 + x1) / 2
+    root.location.y -= (y0 + y1) / 2
+    sx = (length / (x1 - x0)) if length else uniform
+    pivot.scale = (sx, uniform, uniform)
+    if axis == "b":
+        pivot.rotation_euler = (0, 0, math.radians(90))
+        pivot.location = (0, offset, 0)
+    else:
+        pivot.location = (offset, 0, 0)
+    bpy.context.view_layer.update()
+    return objs, round(sx, 3), round(x1 - x0, 2)
+
+
+def snap_foot(sc, cam, fw, fh):
+    """Nudge the camera so the origin lands on an exact final-size pixel."""
+    big = max(fw, fh)
+    fx, fy = foot_pixel(sc, cam)
+    cam.data.shift_x -= (round(fx) - fx) / big
+    cam.data.shift_y += (round(fy) - fy) / big
+    bpy.context.view_layer.update()
+
+
+def render_wall(name, ent, outroot, pxm):
+    sc, cam = reset()
+    T = tile_m(pxm)
+    axis = ent.get("axis", "a")
+    uniform = ent.get("uniform", 1.0)
+    meta = {"name": name, "kind": "wall", "actor": ent["actor"], "scale_px_per_m": pxm,
+            "axis": axis, "tile_m": round(T, 3)}
+    if axis == "post":
+        objs, sx, natural = build_piece(ent["parts"], None, uniform, "a")
+    else:
+        tiles = ent["tiles"]
+        L = tiles * T
+        # overlap > 1 lengthens the mesh past its tile so neighbours interlock
+        # (the composite is sliced afterwards, so overlaps never double up).
+        ov = ent.get("overlap", 1.0)
+        own_ov = ov if ent.get("flank") == ent["actor"] else 1.0
+        objs, sx, natural = build_piece(ent["parts"], L * own_ov, uniform, axis)
+        meta.update({"tiles": tiles, "stretch": sx, "natural_length_m": natural, "overlap": own_ov})
+        # Flanking segments make the slice continuous (geometry and shadow).
+        # flank_inset (fraction of a tile) pulls the flanks into the piece, for
+        # gates whose posts end before the neighbouring stakes begin.
+        inset = ent.get("flank_inset", 0.0) * T
+        for side in (-1, 1):
+            build_piece(ent["flank_parts"], T * ov, uniform, axis, side * (L / 2 + T / 2 - inset))
+    fw, fh = frame_static(sc, cam, objs, pxm)
+    snap_foot(sc, cam, fw, fh)
+    sc.frame_set(1)
+    render_to(sc, os.path.join(outroot, name, "static", "d0"), 0)
+    meta["frame"] = [fw, fh]
+    meta["foot"] = foot_pixel(sc, cam)
+    os.makedirs(os.path.join(outroot, name), exist_ok=True)
+    with open(os.path.join(outroot, name, "meta.json"), "w") as f:
+        json.dump(meta, f, indent=1)
+    print(f"RENDERED {name}: {fw}x{fh}, foot {meta['foot']}, stretch {sx}")
+
+
 def render_entity(name, ent, outroot):
     kind = ent["kind"]
     pxm = ENTITY_SCALE.get(name, SCALE[kind])
+    IMPORT_UNITS[0] = ent.get("import_units", True)
+    if kind == "wall":
+        return render_wall(name, ent, outroot, pxm)
     meta = {"name": name, "kind": kind, "actor": ent["actor"], "scale_px_per_m": pxm}
     if "anims" in ent:
         meta["anims"] = {}

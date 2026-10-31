@@ -26,7 +26,7 @@ const SPEED = 55; // world px per second, walking
 const FLAT = new Set(["field"]);
 const STATS_EVERY = 10 * 60 * 1000; // repo stats (commits, age): gently
 const WILD_MAX = 90; // countryside pieces considered per render (nearest the centre of the view)
-const SPRITE_CAP = 150; // sprites built per render at most: a render has 50 ms (see render)
+const SPRITE_CAP = 170; // sprites built per render (scenery trimmed to fit): a render has 50 ms
 const KIND_LABEL = { house: "House", lumber_camp: "Lumber camp", mining_camp: "Mining camp", mill: "Mill", market: "Market", blacksmith: "Blacksmith", university: "University", monastery: "Monastery", defense_tower: "Defense tower", sentry_tower: "Sentry tower", corral: "Corral", fortress: "Fortress", wonder: "Wonder", field: "Farm field", palisade: "Palisade", palisade_corner: "Palisade corner", gate: "Gate" };
 
 /** Loads the chosen art pack: { base, data } or null. Auto prefers a local import. */
@@ -250,6 +250,7 @@ export default class World {
   wallPiece(ents, type, part) {
     const set = this.pack.data.walls?.[type] ?? this.pack.data.walls?.palisade;
     if (!set || !set.a || !set.b) return null; // no full wall set: no walls, and no lone towers
+    if (part === "tower" && type === "stone" && set.corner && ents[set.corner]) return { ent: ents[set.corner], rel: ents[set.corner].image ?? ents[set.corner].variants?.[0] };
     if (part === "tower" || part === "gate_tower") {
       const name = entityFallback(ents, part === "tower" ? "defense_tower" : "sentry_tower");
       return name ? { ent: ents[name], rel: ents[name].image ?? ents[name].variants?.[0] } : null;
@@ -652,8 +653,8 @@ export default class World {
       // Walls: closed on the grid, gates mid-side, posts or towers on the corners.
       if (town.walls) for (const w of town.walls.pieces) {
         const ent = this.wallPiece(ents, town.walls.type, w.part);
-        if (!ent || !visible(w.x, w.y)) continue;
-        items.push({ y: w.y, x: w.x, pri: 2, make: () => this.sprite(ent.ent, ent.rel, town.slot, w.x, w.y, S, view) });
+        if (!ent || !visible(w.x, w.y, 120)) continue;
+        items.push({ y: w.y + (w.order ?? 0), x: w.x, pri: 2, make: () => this.sprite(ent.ent, ent.rel, town.slot, w.x, w.y, S, view) });
       }
       // Grown buildings: what the town's level has unlocked (decor; hover says why).
       for (const ex of town.extras) {
@@ -765,14 +766,18 @@ export default class World {
     // re-rendered"). Elements are what cost, so only the most important ones nearest the view's
     // centre are built: units and town centers first, scenery last.
     const ctr = { x: this.base.x - pan.x / S, y: this.base.y - pan.y / S };
-    let kept = items;
-    if (items.length > SPRITE_CAP) {
-      kept = items
-        .map((it) => ({ it, k: (it.pri ?? 3) * 1e7 + Math.hypot((it.x ?? ctr.x) - ctr.x, ((it.y > 1e5 ? it.y - 1e6 : it.y) - ctr.y) * 2) }))
+    // Units, buildings and walls in view are always drawn (a wall with holes looks broken);
+    // only scenery (mines, trees, countryside) is trimmed to fit, nearest the centre first.
+    const essential = items.filter((it) => (it.pri ?? 3) <= 2);
+    let scenery = items.filter((it) => (it.pri ?? 3) > 2);
+    const room = Math.max(40, SPRITE_CAP - essential.length);
+    if (scenery.length > room)
+      scenery = scenery
+        .map((it) => ({ it, k: (it.pri ?? 3) * 1e7 + Math.hypot((it.x ?? ctr.x) - ctr.x, (it.y - ctr.y) * 2) }))
         .sort((a, b) => a.k - b.k)
-        .slice(0, SPRITE_CAP)
+        .slice(0, room)
         .map((o) => o.it);
-    }
+    const kept = [...essential, ...scenery];
     kept.sort((a, b) => a.y - b.y);
     const built = kept.map((it) => it.el ?? it.make());
     // The building (or town center) being moved follows the pointer as a ghost.

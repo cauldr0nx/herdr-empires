@@ -825,9 +825,10 @@ const planCache = new Map();
  * forest: [{ x, y, v }], mines: [{ kind, x, y }], nodes: { wood, gold, stone, food },
  * walls: null | { type, pieces: [{ part, x, y }] } }. Cached: the same inputs give the same plan.
  */
-/** The cache key of a plan: everything planTown depends on. */
+/** The cache key of a plan: everything planTown depends on. Bump the leading version whenever
+ *  the planner's rules change, or saved plans from the old rules keep being drawn. */
 export function planKey(seed, level, style, tabs = [], tile = TILE) {
-  return `p2|${seed}|${level}|${style}|${tabs.map((t) => `${t.id}:${t.resource}:${t.kind ?? ""}:${t.house ? 1 : 0}`).join(",")}|${tile.w}x${tile.h}`;
+  return `p4|${seed}|${level}|${style}|${tabs.map((t) => `${t.id}:${t.resource}:${t.kind ?? ""}:${t.house ? 1 : 0}`).join(",")}|${tile.w}x${tile.h}`;
 }
 
 /** A finished plan from the in-memory cache, or null (callers may compute it elsewhere). */
@@ -868,7 +869,13 @@ export function planTown(seed, level, style, tabs = [], tile = TILE) {
     for (let a = -m; a < n + m; a++) for (let b = -m; b < n + m; b++) if (!free(i + a, j + b)) return false;
     return true;
   };
-  const occ = { add: (key) => { const [i, j] = key.split(",").map(Number); mark(i, j); } };
+  // Nature (forest, mines) also goes in its own grid: the only thing a wall stops for.
+  const natureGrid = new Uint8Array(SIDE * SIDE);
+  const isNature = (i, j) => {
+    const k = idx(i, j);
+    return k >= 0 && natureGrid[k] === 1;
+  };
+  const occ = { add: (key) => { const [i, j] = key.split(",").map(Number); mark(i, j); const k = idx(i, j); if (k >= 0) natureGrid[k] = 1; } };
   const centre = (i, j, n) => ({ ci: i + (n - 1) / 2, cj: j + (n - 1) / 2 });
   // Spiral search for the free spot whose centre is nearest the anchor.
   const place = (n, near, m = 1, maxR = 30) => {
@@ -921,6 +928,10 @@ export function planTown(seed, level, style, tabs = [], tile = TILE) {
   };
   const mineAt = (kind, ang, dist) => {
     const c = place(FOOT[kind], at(ang, dist), 1);
+    if (c) {
+      const n = FOOT[kind], i = Math.round(c.ci - (n - 1) / 2), j = Math.round(c.cj - (n - 1) / 2);
+      for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) { const k = idx(i + a, j + b); if (k >= 0) natureGrid[k] = 1; }
+    }
     return { kind, ...c };
   };
   const gold = mineAt("gold_mine", a0 + 2.1 + (r() - 0.5) * 0.4, 9);
@@ -995,7 +1006,8 @@ export function planTown(seed, level, style, tabs = [], tile = TILE) {
   // two tiles out; gates mid-side; corners get posts, or towers from TOWERS on.
   let walls = null;
   if (wallType) {
-    const core = [{ ci: 0, cj: 0, n: FOOT.town_center }, ...[...tabBuildings, ...extras].filter((b) => b.kind !== "lumber_camp" && b.kind !== "mining_camp" && !/tower/.test(b.kind)).map((b) => ({ ci: b.ci, cj: b.cj, n: FOOT[b.kind] ?? 3 }))];
+    // Everything built is inside; only forest and mines may break the line.
+    const core = [{ ci: 0, cj: 0, n: FOOT.town_center }, ...[...tabBuildings, ...extras].map((b) => ({ ci: b.ci, cj: b.cj, n: FOOT[b.kind] ?? 3 }))];
     let i0 = Infinity, i1 = -Infinity, j0 = Infinity, j1 = -Infinity;
     for (const b of core) {
       i0 = Math.min(i0, Math.floor(b.ci - (b.n - 1) / 2));
@@ -1005,24 +1017,33 @@ export function planTown(seed, level, style, tabs = [], tile = TILE) {
     }
     i0 -= 2; i1 += 2; j0 -= 2; j1 += 2;
     const pieces = [];
-    const piece = (part, i, j) => {
-      if (!free(i, j)) return; // a forest or a mine: the wall stops there
+    const blocked = [];
+    // `ci, cj` may be half-tiles (a two-tile gate sits on the vertex between its tiles).
+    const piece = (part, i, j, needs = [[i, j]]) => {
+      if (needs.some(([a, b]) => isNature(a, b))) { blocked.push(`${i},${j}`); return; } // forest or mine: the wall stops
       const p = tileToWorld(i, j, tile);
-      pieces.push({ part, x: p.x, y: p.y, ci: i, cj: j });
+      // Corners and towers draw after the segments meeting there.
+      pieces.push({ part, x: p.x, y: p.y, ci: i, cj: j, order: part === "corner" || part === "tower" ? 0.5 : 0 });
     };
-    const mi = Math.round((i0 + i1) / 2), mj = Math.round((j0 + j1) / 2);
-    for (let i = i0 + 1; i < i1; i++) {
-      piece(i === mi ? "gateA" : "a", i, j0);
-      piece(i === mi ? "gateA" : "a", i, j1);
+    // Gates span two tiles: the middle pair of each side.
+    const mi = Math.floor((i0 + i1) / 2), mj = Math.floor((j0 + j1) / 2);
+    // A side gets its gate only where both gate tiles are clear; otherwise it is plain wall.
+    const gateA = (j) => i1 - i0 >= 4 && !isNature(mi, j) && !isNature(mi + 1, j);
+    const gateB = (i) => j1 - j0 >= 4 && !isNature(i, mj) && !isNature(i, mj + 1);
+    for (const j of [j0, j1]) {
+      const g = gateA(j);
+      for (let i = i0 + 1; i < i1; i++) if (!(g && (i === mi || i === mi + 1))) piece("a", i, j);
+      if (g) piece("gateA", mi + 0.5, j, [[mi, j], [mi + 1, j]]);
     }
-    for (let j = j0 + 1; j < j1; j++) {
-      piece(j === mj ? "gateB" : "b", i0, j);
-      piece(j === mj ? "gateB" : "b", i1, j);
+    for (const i of [i0, i1]) {
+      const g = gateB(i);
+      for (let j = j0 + 1; j < j1; j++) if (!(g && (j === mj || j === mj + 1))) piece("b", i, j);
+      if (g) piece("gateB", i, mj + 0.5, [[i, mj], [i, mj + 1]]);
     }
     for (const [i, j] of [[i0, j0], [i1, j0], [i0, j1], [i1, j1]]) piece(towers ? "tower" : "corner", i, j);
     if (gateTowers)
-      for (const [i, j] of [[mi - 1, j0 - 1], [mi + 1, j1 + 1], [i0 - 1, mj + 1], [i1 + 1, mj - 1]]) piece("gate_tower", i, j);
-    walls = { type: wallType, pieces, rect: { i0, i1, j0, j1 } };
+      for (const [i, j] of [[mi - 1, j0 - 1], [mi + 2, j1 + 1], [i0 - 1, mj + 2], [i1 + 1, mj - 1]]) piece("gate_tower", i, j);
+    walls = { type: wallType, pieces, blocked, rect: { i0, i1, j0, j1 } };
   }
   const plan = {
     tabBuildings,

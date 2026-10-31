@@ -18,7 +18,9 @@ Built by `art/zeroad/build.sh` (see `art/zeroad/README.md`); do not edit by hand
 | `pack.json` | the pack descriptor (SPEC §18.4) |
 | `units/<look>-<anim>-<color>.png` | sprite sheets for the six unit looks in `unitLooks` (one row per direction, frames left to right) |
 | `buildings/<name>[-<variant>]-<color>.png` | one image per building (variant) and player colour; `buildings/<name>.png` when the model has no player colour |
-| `nature/*.png` | trees (variants), gold mine, stone mine, berry bush |
+| `walls/*.png` | wall pieces for the `walls` block. Segments and gates are seamless slices exactly `spanTiles` × 48 px wide, anchored at their ground midpoint; corners are anchored on the tile vertex. |
+| `fauna/<animal>-<anim>.png` | animal sheets (sheep, boar, chicken), same layout as unit sheets, no player colour |
+| `nature/*.png` | trees (7 variants), gold mine, stone mine, berry bush (2), rocks (3), bush (2), tuft (3, flat) |
 | `terrain/ground.png` | 1024×512 seamless iso grass (tiles in x and y); `terrain.ground` / `terrain.groundSize`. Prefer it over the diamond tiles. |
 | `terrain/dirt-patch-*.png` | 400×200 soft-edged dirt decals (entity `dirt_patch`, anchor = centre), for under town centres |
 | `terrain/<kind>-<n>.png` | 96×48 2:1 diamond tiles (grass, dirt, forest floor); legacy, edges are hard |

@@ -8,6 +8,16 @@
   "villager_e",
   "villager_f"
  ],
+ "fauna": [
+  "sheep",
+  "boar",
+  "chicken"
+ ],
+ "decor": [
+  "rocks",
+  "bush",
+  "tuft"
+ ],
  "title": "0 A.D. (CC BY-SA 3.0)",
  "license": "CC-BY-SA-3.0",
  "attribution": "Art derived from 0 A.D. by Wildfire Games (https://www.wildfiregames.com/), CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/)",
@@ -76,6 +86,25 @@
   "dirNote": "S faces the viewer (screen-down); then clockwise on screen. Directions are 45-degree steps on the ground plane, so SW/NW/NE/SE run along tile edges.",
   "anchor": "foot point inside each frame (units) or image (static), in px from the top-left"
  },
+ "walls": {
+  "palisade": {
+   "segmentTiles": 1,
+   "a": "palisade_a",
+   "b": "palisade_b",
+   "corner": "palisade_post",
+   "gateA": "palisade_gate_a",
+   "gateB": "palisade_gate_b"
+  },
+  "stone": {
+   "segmentTiles": 1,
+   "a": "wall_a",
+   "b": "wall_b",
+   "corner": "wall_tower",
+   "gateA": "wall_gate_a",
+   "gateB": "wall_gate_b"
+  }
+ },
+ "wallNote": "Segments span exactly segmentTiles tile edges; axis a runs screen upper-left to lower-right (+48, +24 px per tile), axis b upper-right to lower-left (-48, +24). The anchor is the segment's ground midpoint; place consecutive pieces one tile apart. Gates have spanTiles 2 (anchor = midpoint of the 2-tile run). Corners are posts/towers centred on the tile vertex; draw them after the segments meeting there.",
  "entities": {
   "villager": {
    "anchor": [
@@ -549,7 +578,8 @@
    "source": "0 A.D. farmland plot (flat ground decal)",
    "playerColor": false,
    "scale_px_per_m": 8.6,
-   "image": "buildings/field.png"
+   "image": "buildings/field.png",
+   "flat": true
   },
   "corral": {
    "anchor": [
@@ -642,18 +672,22 @@
   "tree": {
    "anchor": [
     58,
-    129
+    134
    ],
    "size": [
     168,
-    159
+    165
    ],
    "scale_px_per_m": 6.5,
-   "source": "flora/trees/oak_new.xml, flora/trees/euro_birch_tree.xml, flora/trees/pine.xml",
+   "source": "flora/trees/oak_new.xml, flora/trees/euro_birch_tree.xml, flora/trees/pine.xml, flora/trees/oak_large.xml, flora/trees/oak_dead.xml, flora/trees/european_beech.xml, flora/trees/temperate_bush_biome.xml",
    "variants": [
     "nature/tree-0.png",
     "nature/tree-1.png",
-    "nature/tree-2.png"
+    "nature/tree-2.png",
+    "nature/tree-3.png",
+    "nature/tree-4.png",
+    "nature/tree-5.png",
+    "nature/tree-6.png"
    ]
   },
   "gold_mine": {
@@ -685,15 +719,306 @@
   "berry_bush": {
    "anchor": [
     55,
-    41
+    48
    ],
    "size": [
     112,
-    68
+    75
    ],
    "scale_px_per_m": 8.6,
-   "source": "props/flora/berry_bush.xml",
-   "image": "nature/berry-bush.png"
+   "source": "props/flora/berry_bush.xml, props/flora/berry_bush_02.xml",
+   "variants": [
+    "nature/berry-bush-0.png",
+    "nature/berry-bush-1.png"
+   ]
+  },
+  "rocks": {
+   "anchor": [
+    35,
+    44
+   ],
+   "size": [
+    80,
+    60
+   ],
+   "scale_px_per_m": 8.6,
+   "source": "geology/gray_rock1.xml, geology/stone_granite_boulder.xml, geology/shoreline_small.xml",
+   "variants": [
+    "nature/rocks-0.png",
+    "nature/rocks-1.png",
+    "nature/rocks-2.png"
+   ]
+  },
+  "bush": {
+   "anchor": [
+    25,
+    52
+   ],
+   "size": [
+    62,
+    69
+   ],
+   "scale_px_per_m": 8.6,
+   "source": "props/flora/bush_tempe_me_lush.xml, props/flora/bush_tempe_la.xml",
+   "variants": [
+    "nature/bush-0.png",
+    "nature/bush-1.png"
+   ]
+  },
+  "tuft": {
+   "anchor": [
+    20,
+    22
+   ],
+   "size": [
+    42,
+    30
+   ],
+   "scale_px_per_m": 8.6,
+   "source": "props/flora/grass_soft_tuft_a.xml, props/flora/grass_field_flowering_tall.xml, props/flora/flower_bright.xml",
+   "variants": [
+    "nature/tuft-0.png",
+    "nature/tuft-1.png",
+    "nature/tuft-2.png"
+   ],
+   "flat": true
+  },
+  "sheep": {
+   "anchor": [
+    24,
+    43
+   ],
+   "frame": [
+    53,
+    54
+   ],
+   "anims": {
+    "idle": {
+     "fps": 5,
+     "dirs": 8,
+     "frames": 6,
+     "sheet": "fauna/sheep-idle.png"
+    },
+    "walk": {
+     "fps": 10,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "fauna/sheep-walk.png"
+    }
+   },
+   "source": "0 A.D. actor fauna/sheep1.xml",
+   "scale_px_per_m": 13.0,
+   "playerColor": false
+  },
+  "boar": {
+   "anchor": [
+    26,
+    30
+   ],
+   "frame": [
+    55,
+    41
+   ],
+   "anims": {
+    "idle": {
+     "fps": 5,
+     "dirs": 8,
+     "frames": 6,
+     "sheet": "fauna/boar-idle.png"
+    },
+    "walk": {
+     "fps": 10,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "fauna/boar-walk.png"
+    }
+   },
+   "source": "0 A.D. actor fauna/boar.xml",
+   "scale_px_per_m": 13.0,
+   "playerColor": false
+  },
+  "chicken": {
+   "anchor": [
+    11,
+    21
+   ],
+   "frame": [
+    30,
+    28
+   ],
+   "anims": {
+    "idle": {
+     "fps": 5,
+     "dirs": 8,
+     "frames": 6,
+     "sheet": "fauna/chicken-idle.png"
+    },
+    "walk": {
+     "fps": 10,
+     "dirs": 8,
+     "frames": 8,
+     "sheet": "fauna/chicken-walk.png"
+    }
+   },
+   "source": "0 A.D. actor fauna/chicken.xml",
+   "scale_px_per_m": 13.0,
+   "playerColor": false
+  },
+  "palisade_a": {
+   "image": "walls/palisade-a.png",
+   "size": [
+    48,
+    87
+   ],
+   "anchor": [
+    24,
+    60
+   ],
+   "playerColor": false,
+   "spanTiles": 1,
+   "axis": "a",
+   "source": "0 A.D. props/special/palisade_rocks_medium.xml (slice of a continuous render)",
+   "scale_px_per_m": 8.6
+  },
+  "palisade_b": {
+   "image": "walls/palisade-b.png",
+   "size": [
+    48,
+    87
+   ],
+   "anchor": [
+    24,
+    60
+   ],
+   "playerColor": false,
+   "spanTiles": 1,
+   "axis": "b",
+   "source": "0 A.D. props/special/palisade_rocks_medium.xml (slice of a continuous render)",
+   "scale_px_per_m": 8.6
+  },
+  "palisade_post": {
+   "image": "walls/palisade-post.png",
+   "size": [
+    68,
+    71
+   ],
+   "anchor": [
+    22,
+    58
+   ],
+   "playerColor": false,
+   "source": "0 A.D. props/special/palisade_rocks_tower.xml",
+   "scale_px_per_m": 8.6
+  },
+  "palisade_gate_a": {
+   "image": "walls/palisade-gate-a.png",
+   "size": [
+    96,
+    119
+   ],
+   "anchor": [
+    48,
+    79
+   ],
+   "playerColor": false,
+   "spanTiles": 2,
+   "axis": "a",
+   "source": "0 A.D. props/special/palisade_rocks_gate.xml (slice of a continuous render)",
+   "scale_px_per_m": 8.6
+  },
+  "palisade_gate_b": {
+   "image": "walls/palisade-gate-b.png",
+   "size": [
+    96,
+    120
+   ],
+   "anchor": [
+    48,
+    80
+   ],
+   "playerColor": false,
+   "spanTiles": 2,
+   "axis": "b",
+   "source": "0 A.D. props/special/palisade_rocks_gate.xml (slice of a continuous render)",
+   "scale_px_per_m": 8.6
+  },
+  "wall_a": {
+   "image": "walls/wall-a-{color}.png",
+   "size": [
+    48,
+    101
+   ],
+   "anchor": [
+    24,
+    72
+   ],
+   "playerColor": true,
+   "spanTiles": 1,
+   "axis": "a",
+   "source": "0 A.D. structures/britons/wall_short.xml (slice of a continuous render)",
+   "scale_px_per_m": 8.6
+  },
+  "wall_b": {
+   "image": "walls/wall-b-{color}.png",
+   "size": [
+    48,
+    98
+   ],
+   "anchor": [
+    24,
+    69
+   ],
+   "playerColor": true,
+   "spanTiles": 1,
+   "axis": "b",
+   "source": "0 A.D. structures/britons/wall_short.xml (slice of a continuous render)",
+   "scale_px_per_m": 8.6
+  },
+  "wall_tower": {
+   "image": "walls/wall-tower-{color}.png",
+   "size": [
+    98,
+    114
+   ],
+   "anchor": [
+    34,
+    91
+   ],
+   "playerColor": true,
+   "source": "0 A.D. structures/britons/wall_tower.xml",
+   "scale_px_per_m": 8.6
+  },
+  "wall_gate_a": {
+   "image": "walls/wall-gate-a-{color}.png",
+   "size": [
+    96,
+    134
+   ],
+   "anchor": [
+    48,
+    90
+   ],
+   "playerColor": true,
+   "spanTiles": 2,
+   "axis": "a",
+   "source": "0 A.D. structures/britons/wall_gate.xml (slice of a continuous render)",
+   "scale_px_per_m": 8.6
+  },
+  "wall_gate_b": {
+   "image": "walls/wall-gate-b-{color}.png",
+   "size": [
+    96,
+    134
+   ],
+   "anchor": [
+    48,
+    90
+   ],
+   "playerColor": true,
+   "spanTiles": 2,
+   "axis": "b",
+   "source": "0 A.D. structures/britons/wall_gate.xml (slice of a continuous render)",
+   "scale_px_per_m": 8.6
   },
   "dirt_patch": {
    "image": "terrain/dirt-patch-0.png",

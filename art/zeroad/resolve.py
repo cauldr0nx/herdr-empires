@@ -45,6 +45,10 @@ VILLAGER_ANIMS = {
     "carry":       (["carry_wood"], "Walk", 8, 9),
     "build":       (["Build"], "Build", 8, 7),
 }
+FAUNA_ANIMS = {
+    "idle": (["Idle"], "Idle", 6, 5),
+    "walk": (["Walk"], "Walk", 8, 10),
+}
 # Turns a citizen soldier into an unarmed worker: swap the soldier's base
 # stance for 0 A.D.'s male labourer stance and drop weapons/shields/helmets
 # (gather/carry/build variants still add their own tools).
@@ -94,6 +98,38 @@ ENTITIES = {
     "gate":            {"actor": "props/special/palisade_rocks_gate.xml", "kind": "building"},
     "house_gaul_0":  {"actor": "structures/gauls/house.xml", "kind": "building", "pick": 0},
     "house_gaul_1":  {"actor": "structures/gauls/house.xml", "kind": "building", "pick": 1},
+    # walls (kind "wall"; render.py fits them to the 96x48 tile grid).
+    # tiles: length in tile edges; uniform: scale for the other two axes;
+    # flank: actor rendered either side (1 tile each) so the sprite can be cut
+    # into a seamless slice of an endless wall.
+    "palisade_a":      {"actor": "props/special/palisade_rocks_medium.xml", "kind": "wall", "axis": "a",
+                        "tiles": 1, "uniform": 1.0, "overlap": 1.25, "flank": "props/special/palisade_rocks_medium.xml"},
+    "palisade_b":      {"actor": "props/special/palisade_rocks_medium.xml", "kind": "wall", "axis": "b",
+                        "tiles": 1, "uniform": 1.0, "overlap": 1.25, "flank": "props/special/palisade_rocks_medium.xml"},
+    "palisade_gate_a": {"actor": "props/special/palisade_rocks_gate.xml", "kind": "wall", "axis": "a",
+                        "tiles": 2, "uniform": 1.0, "overlap": 1.25, "flank_inset": 0.2, "flank": "props/special/palisade_rocks_medium.xml"},
+    "palisade_gate_b": {"actor": "props/special/palisade_rocks_gate.xml", "kind": "wall", "axis": "b",
+                        "tiles": 2, "uniform": 1.0, "overlap": 1.25, "flank_inset": 0.2, "flank": "props/special/palisade_rocks_medium.xml"},
+    "palisade_post":   {"actor": "props/special/palisade_rocks_tower.xml", "kind": "wall", "axis": "post",
+                        "uniform": 0.85},
+    "wall_a":      {"actor": "structures/britons/wall_short.xml", "kind": "wall", "axis": "a",
+                    "tiles": 1, "uniform": 0.58, "flank": "structures/britons/wall_short.xml"},
+    "wall_b":      {"actor": "structures/britons/wall_short.xml", "kind": "wall", "axis": "b",
+                    "tiles": 1, "uniform": 0.58, "flank": "structures/britons/wall_short.xml"},
+    "wall_gate_a": {"actor": "structures/britons/wall_gate.xml", "kind": "wall", "axis": "a",
+                    "tiles": 2, "uniform": 0.58, "flank": "structures/britons/wall_short.xml"},
+    "wall_gate_b": {"actor": "structures/britons/wall_gate.xml", "kind": "wall", "axis": "b",
+                    "tiles": 2, "uniform": 0.58, "flank": "structures/britons/wall_short.xml"},
+    "wall_tower":  {"actor": "structures/britons/wall_tower.xml", "kind": "wall", "axis": "post",
+                    "uniform": 0.58},
+    # fauna (kind "fauna": unit framing, no player colour)
+    "sheep": {"actor": "fauna/sheep1.xml", "kind": "fauna", "anims": FAUNA_ANIMS, "select": ["normal"]},
+    "boar":  {"actor": "fauna/boar.xml", "kind": "fauna", "anims": FAUNA_ANIMS, "select": ["normal"]},
+    "chicken": {"actor": "fauna/chicken.xml", "kind": "fauna", "anims": FAUNA_ANIMS},
+    # Not usable with Blender 4.5's COLLADA importer (see README): deer (its
+    # ColladaMax animations have a different rest pose than the mesh: limbs
+    # explode, with or without unit conversion), goat (animation keys scaled
+    # ~500x), cow and pig (animation .dae fail to parse).
     # gaia
     "tree_0": {"actor": "flora/trees/oak_new.xml", "kind": "gaia", "pick": 0},
     "tree_1": {"actor": "flora/trees/euro_birch_tree.xml", "kind": "gaia", "pick": 0},
@@ -101,6 +137,20 @@ ENTITIES = {
     "gold_mine":  {"actor": "geology/metal_temperate_round.xml", "kind": "gaia", "pick": 0},
     "stone_mine": {"actor": "geology/stonemine_temperate_quarry.xml", "kind": "gaia"},
     "berry_bush": {"actor": "props/flora/berry_bush.xml", "kind": "gaia", "pick": 0},
+    "berry_bush_1": {"actor": "props/flora/berry_bush_02.xml", "kind": "gaia", "pick": 0},
+    # wilderness decor
+    "tree_3": {"actor": "flora/trees/oak_large.xml", "kind": "gaia", "pick": 0},
+    "tree_4": {"actor": "flora/trees/oak_dead.xml", "kind": "gaia", "pick": 0},
+    "tree_5": {"actor": "flora/trees/european_beech.xml", "kind": "gaia", "pick": 0},
+    "tree_6": {"actor": "flora/trees/temperate_bush_biome.xml", "kind": "gaia", "pick": 0},
+    "rocks_0": {"actor": "geology/gray_rock1.xml", "kind": "gaia", "pick": 0},
+    "rocks_1": {"actor": "geology/stone_granite_boulder.xml", "kind": "gaia", "pick": 0},
+    "rocks_2": {"actor": "geology/shoreline_small.xml", "kind": "gaia", "pick": 0},
+    "bush_0": {"actor": "props/flora/bush_tempe_me_lush.xml", "kind": "gaia", "pick": 0},
+    "bush_1": {"actor": "props/flora/bush_tempe_la.xml", "kind": "gaia", "pick": 0},
+    "tuft_0": {"actor": "props/flora/grass_soft_tuft_a.xml", "kind": "gaia", "pick": 0},
+    "tuft_1": {"actor": "props/flora/grass_field_flowering_tall.xml", "kind": "gaia", "pick": 0},
+    "tuft_2": {"actor": "props/flora/flower_bright.xml", "kind": "gaia", "pick": 0},
 }
 # Group selections that are always applied (alive, ungarrisoned, ...).
 BASE_SELECTIONS = ["alive", "ungarrisoned", "Base"]
@@ -246,8 +296,10 @@ def build():
         OPTS.update(e)
         if "anims" in e:
             scenes[name] = {"kind": e["kind"], "actor": e["actor"], "anims": {}}
+            if "import_units" in e:
+                scenes[name]["import_units"] = e["import_units"]
             for anim, (sel, zname, frames, fps) in e["anims"].items():
-                parts, anims = resolve_actor(e["actor"], BASE_SELECTIONS + sel, pick, files)
+                parts, anims = resolve_actor(e["actor"], BASE_SELECTIONS + e.get("select", []) + sel, pick, files)
                 af = anims.get(zname.lower())
                 if not af:
                     raise SystemExit(f"{name}/{anim}: no animation {zname!r} in {sorted(anims)}")
@@ -257,6 +309,13 @@ def build():
         else:
             parts, _ = resolve_actor(e["actor"], BASE_SELECTIONS + e.get("select", []), pick, files)
             scenes[name] = {"kind": e["kind"], "actor": e["actor"], "parts": parts}
+            if e["kind"] == "wall":
+                for k in ("axis", "tiles", "uniform", "overlap", "flank_inset"):
+                    if k in e:
+                        scenes[name][k] = e[k]
+                if e.get("flank"):
+                    scenes[name]["flank_parts"], _ = resolve_actor(e["flank"], BASE_SELECTIONS, 0, files)
+                    scenes[name]["flank"] = e["flank"]
     for v in TERRAIN.values():
         for t in v:
             files.add("textures/terrain/types/" + t)

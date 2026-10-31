@@ -101,5 +101,21 @@ pack `LICENSE` is the CC legal code text, which contains no addresses.
   `variants`, `size`, `anchor` = centre) is a ground decal: draw it after the
   ground and before every depth-sorted sprite; scaling it ~1.5× suits a
   town centre.
+- Walls: `walls.<kind>` names the pieces `a`, `b`, `corner`, `gateA` and
+  `gateB`.
+  - Segments and gates are vertical slices `spanTiles × 48` px wide with
+    `anchor` at the ground midpoint of the run they cover. Place a 1-tile
+    segment's anchor at the midpoint of a tile edge, and a 2-tile gate's
+    anchor at the shared vertex in the middle of its two edges.
+  - Axis a means a tile step of (+48, +24); axis b means (−48, +24).
+  - Corners (`palisade_post`, `wall_tower`) are anchored on the tile vertex.
+    Draw them after the segments that meet there (sort key: vertex y + ½).
+  - Depth-sort every wall piece with the other sprites by anchor y.
+  - Stone wall pieces have player colour (`{color}`); palisade pieces don't.
+- Fauna: `fauna` lists `sheep`, `boar` and `chicken`. Their sheets follow
+  the unit layout (8 direction rows, `frame`, `anchor`), with plain paths
+  (`playerColor: false`).
+- Decor: `decor` lists `rocks`, `bush` and `tuft`; each has `variants`.
+  `tuft` and `field` carry `"flat": true` and belong to the ground layer.
 - UI portraits are 0 A.D. session portraits (not square crops of HUD frames);
   scale them down as needed.

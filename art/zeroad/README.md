@@ -51,6 +51,36 @@ committing the pack.
   palisade (straight), palisade_corner, gate; Gaul houses join `house.variants`.
   Entities without any player-colour area (field, palisades, gate) ship a
   single image (`playerColor: false`).
+- **Walls** (`walls` block in pack.json; kind `wall` in `render.py`):
+  - Palisade: 0 A.D. rock-footed palisade (`props/special/palisade_rocks_medium`)
+    for segments `palisade_a` and `palisade_b`, `palisade_rocks_gate` for
+    `palisade_gate_a` and `palisade_gate_b`, and `palisade_rocks_tower`
+    (at 0.85×) for the corner `palisade_post`.
+  - Stone: Briton `wall_short` for `wall_a` and `wall_b`, `wall_gate` for
+    `wall_gate_a` and `wall_gate_b`, and `wall_tower` for the corner.
+  - **One tile edge per segment** (`segmentTiles: 1`). At building scale
+    (8.6 px/m) a 96×48 tile edge is 7.89 m. Each mesh is stretched along its
+    length to fit:
+    - palisade: medium segment ×0.886 (made 25% longer than the tile so the
+      stakes interlock);
+    - stone: everything at 0.58× uniform, with the segment fitted to 1 tile
+      (×0.58 along its length);
+    - gates span 2 tiles (`spanTiles: 2`): palisade gate ×0.93, stone gate
+      ×0.42 along its length.
+  - **Seamless slices.** Each segment or gate is rendered between neighbouring
+    copies of the segment, so its geometry and shadow continue on both sides.
+    `compose.py` then cuts a vertical strip `spanTiles × 48` px wide, centred
+    on the piece's ground midpoint. The camera is nudged so that midpoint
+    falls on an exact pixel. Strips placed (±48, ±24) apart therefore tile
+    with no gap or overlap.
+  - Axis a runs along world X (screen upper-left → lower-right); axis b runs
+    along world Y.
+- **Fauna** (`fauna`; kind `fauna`): sheep, boar and chicken. Each has idle
+  (6 frames) and walk (8 frames), 8 directions, unit scale, and no player
+  colour.
+- **Decor** (`decor`): `rocks` (3 variants), `bush` (2) and `tuft` (3; flat,
+  drawn with the ground). `tree` gains a big oak, a dead oak, a beech and a
+  bush-tree (7 variants). `berry_bush` gains a second variant.
 - **Nature:** oak, birch and pine trees; temperate metal mine (gold), temperate
   stone quarry, berry bush.
 - **Terrain:** `terrain/ground.png`, a 1024×512 seamless iso ground: two
@@ -85,6 +115,16 @@ committing the pack.
   terrain); `render.py` lowers gaia to touch the ground (fixed the floating
   stone mine). The shadow catcher's faint whole-frame sky occlusion is
   removed in `compose.py`.
+- Fauna that Blender 4.5's COLLADA importer cannot animate:
+  - deer: its 3ds Max animations have a different rest pose from the mesh,
+    so the limbs explode, with or without unit conversion;
+  - goat: its animation keys come in scaled about 500×;
+  - cow and pig: their animation `.dae` files fail to parse.
+
+  The lead asked for deer, goat and cow; chicken was added instead.
+- Stone wall slices include a sliver of the neighbouring segment's shadow at
+  the start of a run (the render assumes the wall continues). Corner pieces
+  cover most of it.
 - Particle props (smoke, sparkles) are skipped; ground decals are drawn as
   flat textured quads.
 - Animation sampling is uniform over each clip; 0 A.D.'s `speed` attributes

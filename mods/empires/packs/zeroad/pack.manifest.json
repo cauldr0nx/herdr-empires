@@ -4432,7 +4432,97 @@
    "generator": "art/zeroad/build.sh",
    "notes": "0 A.D. actor structures/britons/wonder.xml; player colour yellow"
   },
-  "nature/berry-bush.png": {
+  "fauna/boar-idle.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/fauna/boar.xml",
+    "animation/quadraped/animal_boar_idle_02.dae",
+    "meshes/skeletal/animal_boar.dae",
+    "textures/skins/skeletal/animal_boar_01.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "idle: 8 rows (directions S,SW,W,NW,N,NE,E,SE) x 6 frames, 55x41 px each"
+  },
+  "fauna/boar-walk.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/fauna/boar.xml",
+    "animation/quadraped/animal_boar_walk_01.dae",
+    "meshes/skeletal/animal_boar.dae",
+    "textures/skins/skeletal/animal_boar_01.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "walk: 8 rows (directions S,SW,W,NW,N,NE,E,SE) x 8 frames, 55x41 px each"
+  },
+  "fauna/chicken-idle.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/fauna/chicken.xml",
+    "animation/quadraped/chicken_idle_03.dae",
+    "meshes/skeletal/chicken.dae",
+    "textures/skins/skeletal/animal_chicken.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "idle: 8 rows (directions S,SW,W,NW,N,NE,E,SE) x 6 frames, 30x28 px each"
+  },
+  "fauna/chicken-walk.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/fauna/chicken.xml",
+    "animation/quadraped/chicken_walk.dae",
+    "meshes/skeletal/chicken.dae",
+    "textures/skins/skeletal/animal_chicken.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "walk: 8 rows (directions S,SW,W,NW,N,NE,E,SE) x 8 frames, 30x28 px each"
+  },
+  "fauna/sheep-idle.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/fauna/sheep1.xml",
+    "animation/quadraped/sheep_idle_02.dae",
+    "meshes/skeletal/sheep.dae",
+    "textures/skins/skeletal/animal_sheep_a.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "idle: 8 rows (directions S,SW,W,NW,N,NE,E,SE) x 6 frames, 53x54 px each"
+  },
+  "fauna/sheep-walk.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/fauna/sheep1.xml",
+    "animation/quadraped/sheep_walk.dae",
+    "meshes/skeletal/sheep.dae",
+    "textures/skins/skeletal/animal_sheep_a.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "walk: 8 rows (directions S,SW,W,NW,N,NE,E,SE) x 8 frames, 53x54 px each"
+  },
+  "nature/berry-bush-0.png": {
    "source": "0 A.D. (rendered/derived)",
    "sources": [
     "actors/props/flora/berry_bush.xml",
@@ -4448,6 +4538,51 @@
    "generator": "art/zeroad/build.sh",
    "notes": "0 A.D. actor props/flora/berry_bush.xml"
   },
+  "nature/berry-bush-1.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/flora/berry_bush_02.xml",
+    "actors/props/flora/forage_grapes_prop.xml",
+    "meshes/gaia/berry_bush_03.dae",
+    "meshes/gaia/bush_grapes_prop.dae",
+    "textures/skins/gaia/berry_bush_03.png",
+    "textures/skins/gaia/trunk_deciduous_b.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor props/flora/berry_bush_02.xml"
+  },
+  "nature/bush-0.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/flora/bush_tempe_me_lush.xml",
+    "meshes/gaia/bush_me_1.dae",
+    "textures/skins/gaia/bush_tempe_a.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor props/flora/bush_tempe_me_lush.xml"
+  },
+  "nature/bush-1.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/flora/bush_tempe_la.xml",
+    "meshes/gaia/bush_la_1.dae",
+    "textures/skins/gaia/bush_tempe_b.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor props/flora/bush_tempe_la.xml"
+  },
   "nature/gold-mine.png": {
    "source": "0 A.D. (rendered/derived)",
    "sources": [
@@ -4461,6 +4596,48 @@
    "modified": true,
    "generator": "art/zeroad/build.sh",
    "notes": "0 A.D. actor geology/metal_temperate_round.xml"
+  },
+  "nature/rocks-0.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/geology/gray_rock1.xml",
+    "meshes/gaia/wrld_rock_snow2.dae",
+    "textures/skins/gaia/wrld_rock_1.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor geology/gray_rock1.xml"
+  },
+  "nature/rocks-1.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/geology/stone_granite_boulder.xml",
+    "meshes/gaia/stone_granite_boulder_a.dae",
+    "textures/skins/gaia/stone_granite.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor geology/stone_granite_boulder.xml"
+  },
+  "nature/rocks-2.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/geology/shoreline_small.xml",
+    "meshes/gaia/rock_shoreline_sm_a.dae",
+    "textures/skins/gaia/rock_ocean_1.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor geology/shoreline_small.xml"
   },
   "nature/stone-mine.png": {
    "source": "0 A.D. (rendered/derived)",
@@ -4523,6 +4700,110 @@
    "modified": true,
    "generator": "art/zeroad/build.sh",
    "notes": "0 A.D. actor flora/trees/pine.xml"
+  },
+  "nature/tree-3.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/flora/trees/oak_large.xml",
+    "actors/flora/trees/oak_large_top.xml",
+    "meshes/gaia/tree_oak_large_a.dae",
+    "meshes/gaia/tree_oak_large_top_a.dae",
+    "textures/skins/gaia/tree_euro_beech_a.dds",
+    "textures/skins/gaia/trunk_deciduous_b.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor flora/trees/oak_large.xml"
+  },
+  "nature/tree-4.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/flora/trees/oak_dead.xml",
+    "meshes/gaia/tree_oak_new_b.dae",
+    "textures/skins/gaia/tree_dead.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor flora/trees/oak_dead.xml"
+  },
+  "nature/tree-5.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/flora/trees/european_beech.xml",
+    "actors/flora/trees/european_beech_top.xml",
+    "meshes/gaia/tree_oak_a.dae",
+    "meshes/gaia/tree_oak_top_a.dae",
+    "textures/skins/gaia/tree_euro_beech_a.dds",
+    "textures/skins/gaia/trunk_beech_a.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor flora/trees/european_beech.xml"
+  },
+  "nature/tree-6.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/flora/trees/temperate_bush_biome.xml",
+    "meshes/gaia/temp_bush_01.dae",
+    "textures/skins/gaia/temperate_bush_02.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor flora/trees/temperate_bush_biome.xml"
+  },
+  "nature/tuft-0.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/flora/grass_soft_tuft_a.xml",
+    "meshes/gaia/wrld_fol_grasscluster_a_1.dae",
+    "textures/skins/gaia/grass_field_lush_short_c.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor props/flora/grass_soft_tuft_a.xml"
+  },
+  "nature/tuft-1.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/flora/grass_field_flowering_tall.xml",
+    "meshes/gaia/cross_large_short.dae",
+    "textures/skins/gaia/grass_field_flowering_tall_a.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor props/flora/grass_field_flowering_tall.xml"
+  },
+  "nature/tuft-2.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/flora/flower_bright.xml",
+    "meshes/gaia/wrld_flower_bright.dae",
+    "textures/skins/gaia/wrld_flower_bright1.dds"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor props/flora/flower_bright.xml"
   },
   "terrain/dirt-0.png": {
    "source": "0 A.D. (rendered/derived)",
@@ -12804,6 +13085,776 @@
    "modified": true,
    "generator": "art/zeroad/build.sh",
    "notes": "walk: 8 rows (directions S,SW,W,NW,N,NE,E,SE) x 12 frames, 57x65 px each; player colour yellow"
+  },
+  "walls/palisade-a.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_medium.xml",
+    "meshes/props/palisade_rocks_medium.dae",
+    "textures/skins/props/palisade_main.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor props/special/palisade_rocks_medium.xml: 1-tile wall slice along axis A, mesh stretched x0.886 along its length (natural 11.14 m)"
+  },
+  "walls/palisade-b.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_medium.xml",
+    "meshes/props/palisade_rocks_medium.dae",
+    "textures/skins/props/palisade_main.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor props/special/palisade_rocks_medium.xml: 1-tile wall slice along axis B, mesh stretched x0.886 along its length (natural 11.14 m)"
+  },
+  "walls/palisade-gate-a.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/props/special/palisade_rocks_medium.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/props/palisade_rocks_medium.dae",
+    "textures/skins/props/palisade_main.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor props/special/palisade_rocks_gate.xml: 2-tile wall slice along axis A, mesh stretched x0.933 along its length (natural 16.93 m)"
+  },
+  "walls/palisade-gate-b.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/props/special/palisade_rocks_medium.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/props/palisade_rocks_medium.dae",
+    "textures/skins/props/palisade_main.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor props/special/palisade_rocks_gate.xml: 2-tile wall slice along axis B, mesh stretched x0.933 along its length (natural 16.93 m)"
+  },
+  "walls/palisade-post.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_tower.xml",
+    "meshes/props/palisade_rocks_tower.dae",
+    "textures/skins/props/palisade_main.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor props/special/palisade_rocks_tower.xml"
+  },
+  "walls/wall-a-blue.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis A, mesh stretched x0.582 along its length (natural 13.56 m); player colour blue"
+  },
+  "walls/wall-a-cyan.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis A, mesh stretched x0.582 along its length (natural 13.56 m); player colour cyan"
+  },
+  "walls/wall-a-gray.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis A, mesh stretched x0.582 along its length (natural 13.56 m); player colour gray"
+  },
+  "walls/wall-a-green.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis A, mesh stretched x0.582 along its length (natural 13.56 m); player colour green"
+  },
+  "walls/wall-a-orange.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis A, mesh stretched x0.582 along its length (natural 13.56 m); player colour orange"
+  },
+  "walls/wall-a-purple.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis A, mesh stretched x0.582 along its length (natural 13.56 m); player colour purple"
+  },
+  "walls/wall-a-red.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis A, mesh stretched x0.582 along its length (natural 13.56 m); player colour red"
+  },
+  "walls/wall-a-yellow.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis A, mesh stretched x0.582 along its length (natural 13.56 m); player colour yellow"
+  },
+  "walls/wall-b-blue.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis B, mesh stretched x0.582 along its length (natural 13.56 m); player colour blue"
+  },
+  "walls/wall-b-cyan.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis B, mesh stretched x0.582 along its length (natural 13.56 m); player colour cyan"
+  },
+  "walls/wall-b-gray.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis B, mesh stretched x0.582 along its length (natural 13.56 m); player colour gray"
+  },
+  "walls/wall-b-green.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis B, mesh stretched x0.582 along its length (natural 13.56 m); player colour green"
+  },
+  "walls/wall-b-orange.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis B, mesh stretched x0.582 along its length (natural 13.56 m); player colour orange"
+  },
+  "walls/wall-b-purple.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis B, mesh stretched x0.582 along its length (natural 13.56 m); player colour purple"
+  },
+  "walls/wall-b-red.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis B, mesh stretched x0.582 along its length (natural 13.56 m); player colour red"
+  },
+  "walls/wall-b-yellow.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_short.xml",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_short.xml: 1-tile wall slice along axis B, mesh stretched x0.582 along its length (natural 13.56 m); player colour yellow"
+  },
+  "walls/wall-gate-a-blue.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis A, mesh stretched x0.424 along its length (natural 37.27 m); player colour blue"
+  },
+  "walls/wall-gate-a-cyan.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis A, mesh stretched x0.424 along its length (natural 37.27 m); player colour cyan"
+  },
+  "walls/wall-gate-a-gray.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis A, mesh stretched x0.424 along its length (natural 37.27 m); player colour gray"
+  },
+  "walls/wall-gate-a-green.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis A, mesh stretched x0.424 along its length (natural 37.27 m); player colour green"
+  },
+  "walls/wall-gate-a-orange.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis A, mesh stretched x0.424 along its length (natural 37.27 m); player colour orange"
+  },
+  "walls/wall-gate-a-purple.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis A, mesh stretched x0.424 along its length (natural 37.27 m); player colour purple"
+  },
+  "walls/wall-gate-a-red.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis A, mesh stretched x0.424 along its length (natural 37.27 m); player colour red"
+  },
+  "walls/wall-gate-a-yellow.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis A, mesh stretched x0.424 along its length (natural 37.27 m); player colour yellow"
+  },
+  "walls/wall-gate-b-blue.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis B, mesh stretched x0.424 along its length (natural 37.27 m); player colour blue"
+  },
+  "walls/wall-gate-b-cyan.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis B, mesh stretched x0.424 along its length (natural 37.27 m); player colour cyan"
+  },
+  "walls/wall-gate-b-gray.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis B, mesh stretched x0.424 along its length (natural 37.27 m); player colour gray"
+  },
+  "walls/wall-gate-b-green.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis B, mesh stretched x0.424 along its length (natural 37.27 m); player colour green"
+  },
+  "walls/wall-gate-b-orange.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis B, mesh stretched x0.424 along its length (natural 37.27 m); player colour orange"
+  },
+  "walls/wall-gate-b-purple.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis B, mesh stretched x0.424 along its length (natural 37.27 m); player colour purple"
+  },
+  "walls/wall-gate-b-red.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis B, mesh stretched x0.424 along its length (natural 37.27 m); player colour red"
+  },
+  "walls/wall-gate-b-yellow.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/props/special/palisade_rocks_gate.xml",
+    "actors/structures/britons/wall_gate.xml",
+    "actors/structures/britons/wall_short.xml",
+    "meshes/props/palisade_rocks_gate.dae",
+    "meshes/structural/brit_wall_gate.dae",
+    "meshes/structural/brit_wall_short.dae",
+    "textures/skins/props/palisade_main.png",
+    "textures/skins/structural/ao/brit_wall_gate_AO.png",
+    "textures/skins/structural/ao/brit_wall_short_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_gate.xml: 2-tile wall slice along axis B, mesh stretched x0.424 along its length (natural 37.27 m); player colour yellow"
+  },
+  "walls/wall-tower-blue.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_tower.xml",
+    "meshes/structural/brit_wall_tower.dae",
+    "textures/skins/structural/ao/brit_wall_tower_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_tower.xml; player colour blue"
+  },
+  "walls/wall-tower-cyan.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_tower.xml",
+    "meshes/structural/brit_wall_tower.dae",
+    "textures/skins/structural/ao/brit_wall_tower_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_tower.xml; player colour cyan"
+  },
+  "walls/wall-tower-gray.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_tower.xml",
+    "meshes/structural/brit_wall_tower.dae",
+    "textures/skins/structural/ao/brit_wall_tower_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_tower.xml; player colour gray"
+  },
+  "walls/wall-tower-green.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_tower.xml",
+    "meshes/structural/brit_wall_tower.dae",
+    "textures/skins/structural/ao/brit_wall_tower_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_tower.xml; player colour green"
+  },
+  "walls/wall-tower-orange.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_tower.xml",
+    "meshes/structural/brit_wall_tower.dae",
+    "textures/skins/structural/ao/brit_wall_tower_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_tower.xml; player colour orange"
+  },
+  "walls/wall-tower-purple.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_tower.xml",
+    "meshes/structural/brit_wall_tower.dae",
+    "textures/skins/structural/ao/brit_wall_tower_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_tower.xml; player colour purple"
+  },
+  "walls/wall-tower-red.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_tower.xml",
+    "meshes/structural/brit_wall_tower.dae",
+    "textures/skins/structural/ao/brit_wall_tower_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_tower.xml; player colour red"
+  },
+  "walls/wall-tower-yellow.png": {
+   "source": "0 A.D. (rendered/derived)",
+   "sources": [
+    "actors/structures/britons/wall_tower.xml",
+    "meshes/structural/brit_wall_tower.dae",
+    "textures/skins/structural/ao/brit_wall_tower_AO.png",
+    "textures/skins/structural/brit_struct.png"
+   ],
+   "author": "Wildfire Games",
+   "url": "https://github.com/0ad/0ad",
+   "license": "CC-BY-SA-3.0",
+   "modified": true,
+   "generator": "art/zeroad/build.sh",
+   "notes": "0 A.D. actor structures/britons/wall_tower.xml; player colour yellow"
   }
  }
 }

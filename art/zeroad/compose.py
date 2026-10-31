@@ -70,10 +70,23 @@ LOOK_SOURCES = {
     "villager_f": "Celtic female citizen, second dress/hair variant",
 }
 GAIA = {
-    "tree": ["tree_0", "tree_1", "tree_2"],
+    "tree": ["tree_0", "tree_1", "tree_2", "tree_3", "tree_4", "tree_5", "tree_6"],
     "gold_mine": ["gold_mine"],
     "stone_mine": ["stone_mine"],
-    "berry_bush": ["berry_bush"],
+    "berry_bush": ["berry_bush", "berry_bush_1"],
+    "rocks": ["rocks_0", "rocks_1", "rocks_2"],
+    "bush": ["bush_0", "bush_1"],
+    "tuft": ["tuft_0", "tuft_1", "tuft_2"],
+}
+FAUNA = ["sheep", "boar", "chicken"]
+DECOR = ["rocks", "bush", "tuft"]
+# Wall pieces (rendered by render.py's wall mode). Segments and gates are cut
+# into seamless slices; posts/towers are ordinary statics.
+WALLS = {
+    "palisade": {"a": "palisade_a", "b": "palisade_b", "corner": "palisade_post",
+                 "gateA": "palisade_gate_a", "gateB": "palisade_gate_b"},
+    "stone": {"a": "wall_a", "b": "wall_b", "corner": "wall_tower",
+              "gateA": "wall_gate_a", "gateB": "wall_gate_b"},
 }
 def file_name(pack_entity):
     return pack_entity.replace("_", "-")
@@ -173,7 +186,7 @@ def save_png(img, path, quantize=False):
 
 
 # ------------------------------------------------------------------ units
-def compose_unit(name, frames_dir, out, pack_name="villager"):
+def compose_unit(name, frames_dir, out, pack_name="villager", colored=True, folder="units"):
     meta = json.load(open(os.path.join(frames_dir, name, "meta.json")))
     sources = sources_for(name)
     # Pass 1: downsample everything once (untinted + mask) and find the union box.
@@ -193,20 +206,76 @@ def compose_unit(name, frames_dir, out, pack_name="villager"):
            "source": f"0 A.D. actor {meta['actor']}", "scale_px_per_m": meta["scale_px_per_m"]}
     for anim, am in meta["anims"].items():
         n, dirs = am["frames"], am["dirs"]
-        rel = f"units/{pack_name}-{anim.replace('_', '-')}-{{color}}.png"
-        for color in PLAYER_COLORS:
+        rel = f"{folder}/{pack_name}-{anim.replace('_', '-')}" + ("-{color}.png" if colored else ".png")
+        for color in (PLAYER_COLORS if colored else [None]):
             sheet = np.zeros((fh * dirs, fw * n, 4))
             for d in range(dirs):
                 for i in range(n):
                     rgba, mask = cache[(anim, d, i)]
                     fr = downsample(tint(rgba, mask, color))[y0:y0 + fh, x0:x0 + fw]
                     sheet[d * fh:d * fh + fr.shape[0], i * fw:i * fw + fr.shape[1]] = fr
-            orel = rel.format(color=color)
+            orel = rel.format(color=color) if colored else rel
             save_png(to_img(sheet), os.path.join(out, orel), quantize=True)
             note(orel, sources + ["animation/" + am["animation"]],
-                 f"{anim}: {dirs} rows (directions {','.join(DIR_NAMES[:dirs])}) x {n} frames, {fw}x{fh} px each; player colour {color}")
+                 f"{anim}: {dirs} rows (directions {','.join(DIR_NAMES[:dirs])}) x {n} frames, {fw}x{fh} px each"
+                 + (f"; player colour {color}" if color else ""))
         ent["anims"][anim] = {"fps": am["fps"], "dirs": dirs, "frames": n, "sheet": rel}
+    if not colored:
+        ent["playerColor"] = False
     return ent
+
+
+# ------------------------------------------------------------------ walls
+def compose_wall_slice(name, frames_dir, out):
+    """Cut a wall segment/gate out of its flanked render as an exact slice.
+
+    The render shows the piece between copies of the neighbouring segment, so
+    geometry and shadows are continuous. The slice is the vertical strip
+    tiles*48 px wide centred on the piece's ground midpoint (an exact pixel);
+    strips of consecutive pieces placed (+-48, +-24) apart tile with no gap or
+    overlap. Returns entity dict."""
+    meta = json.load(open(os.path.join(frames_dir, name, "meta.json")))
+    rgba, mask = load_frame(os.path.join(frames_dir, name, "static", "d0"), 0)
+    tiles = meta["tiles"]
+    fx, fy = (int(round(v)) for v in meta["foot"])
+    half = tiles * 24
+    colored = mask.max() > 0.1
+    rel = f"walls/{file_name(name)}" + ("-{color}.png" if colored else ".png")
+    box = None
+    imgs = {}
+    for color in (PLAYER_COLORS if colored else [None]):
+        small = downsample(tint(rgba, mask, color))
+        strip = small[:, fx - half:fx + half]
+        imgs[color] = strip
+        if box is None:
+            _, y0, _, y1 = alpha_box([strip])
+            box = (y0, y1)
+    y0, y1 = box
+    for color, strip in imgs.items():
+        orel = rel.format(color=color) if colored else rel
+        save_png(to_img(strip[y0:y1]), os.path.join(out, orel), quantize=True)
+        note(orel, sources_for(name) + sources_for_flank(name),
+             f"0 A.D. actor {meta['actor']}: {tiles}-tile wall slice along axis {meta['axis'].upper()}, "
+             f"mesh stretched x{meta['stretch']} along its length (natural {meta['natural_length_m']} m)"
+             + (f"; player colour {color}" if color else ""))
+    e = {"image": rel, "size": [2 * half, int(y1 - y0)], "anchor": [half, int(fy - y0)],
+         "playerColor": bool(colored), "spanTiles": tiles, "axis": meta["axis"],
+         "source": f"0 A.D. {meta['actor']} (slice of a continuous render)",
+         "scale_px_per_m": meta["scale_px_per_m"]}
+    return e
+
+
+def sources_for_flank(entity):
+    e = SCENES["entities"][entity]
+    out = set()
+    for p in e.get("flank_parts", []):
+        out.add("actors/" + p["actor"])
+        if p["mesh"]:
+            out.add("meshes/" + p["mesh"])
+        for n, t in p["textures"].items():
+            if n in ("baseTex", "aoTex"):
+                out.add("textures/skins/" + t)
+    return sorted(out)
 
 
 # ------------------------------------------------------------------ statics
@@ -497,7 +566,7 @@ def main():
     SCENES = json.load(open(a.scenes))
     out = a.out
     # Start clean but keep hand-written files.
-    for sub in ("units", "buildings", "nature", "terrain", "ui"):
+    for sub in ("units", "buildings", "nature", "terrain", "ui", "walls", "fauna"):
         shutil.rmtree(os.path.join(out, sub), ignore_errors=True)
     os.makedirs(out, exist_ok=True)
 
@@ -530,6 +599,24 @@ def main():
             e["variants"] = r["files"]
         entities[pname] = e
 
+    for look in FAUNA:
+        entities[look] = compose_unit(look, a.frames, out, pack_name=file_name(look), colored=False, folder="fauna")
+        entities[look]["source"] = "0 A.D. " + entities[look]["source"].replace("0 A.D. ", "")
+    walls = {}
+    for kind, pieces in WALLS.items():
+        walls[kind] = {"segmentTiles": 1}
+        for role, ent_name in pieces.items():
+            if role == "corner":
+                r = compose_static([ent_name], a.frames, out, "walls/" + file_name(ent_name), colored=None)
+                entities[ent_name] = {"image": r["files"][0], "size": r["size"], "anchor": r["anchor"],
+                                      "playerColor": r["colored"], "source": "0 A.D. " + SCENES["entities"][ent_name]["actor"],
+                                      "scale_px_per_m": r["scale_px_per_m"]}
+            else:
+                entities[ent_name] = compose_wall_slice(ent_name, a.frames, out)
+            walls[kind][role] = ent_name
+    # Flat pieces belong to the ground layer (drawn before depth-sorted sprites).
+    for flat in ("tuft", "field"):
+        entities[flat]["flat"] = True
     terrain = compose_terrain(SCENES["terrain"], out)
     terrain["ground"], terrain["groundSize"] = compose_ground(out)
     entities["dirt_patch"] = compose_dirt_patches(out)
@@ -538,6 +625,8 @@ def main():
     pack = {
         "name": "zeroad",
         "unitLooks": UNIT_LOOKS,
+        "fauna": FAUNA,
+        "decor": DECOR,
         "title": "0 A.D. (CC BY-SA 3.0)",
         "license": "CC-BY-SA-3.0",
         "attribution": "Art derived from 0 A.D. by Wildfire Games (https://www.wildfiregames.com/), "
@@ -555,6 +644,12 @@ def main():
                        "Directions are 45-degree steps on the ground plane, so SW/NW/NE/SE run along tile edges.",
             "anchor": "foot point inside each frame (units) or image (static), in px from the top-left",
         },
+        "walls": walls,
+        "wallNote": "Segments span exactly segmentTiles tile edges; axis a runs screen upper-left to "
+                    "lower-right (+48, +24 px per tile), axis b upper-right to lower-left (-48, +24). "
+                    "The anchor is the segment's ground midpoint; place consecutive pieces one tile apart. "
+                    "Gates have spanTiles 2 (anchor = midpoint of the 2-tile run). Corners are posts/towers "
+                    "centred on the tile vertex; draw them after the segments meeting there.",
         "entities": entities,
         "ui": ui,
     }
