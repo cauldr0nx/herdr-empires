@@ -1,0 +1,8 @@
+{
+  "img/wood.svg": "art/textures.ts",
+  "img/parchment.svg": "art/textures.ts",
+  "img/stone-wall.svg": "art/textures.ts",
+  "img/herald.svg": "art/textures.ts",
+  "img/victory.svg": "art/textures.ts",
+  "img/resign.svg": "art/textures.ts"
+}

@@ -30,12 +30,15 @@ function files(dir: string): string[] {
 
 let manifest: Record<string, any> = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf8")) : {};
 if (write) {
-  const gen = join(root, "art", "manifest-generated.json");
-  if (existsSync(gen)) {
+  for (const name of ["manifest-generated.json", "manifest-textures.json", "manifest-sounds.json"]) {
+    const gen = join(root, "art", name);
+    if (!existsSync(gen)) continue;
     for (const [file, generator] of Object.entries(JSON.parse(readFileSync(gen, "utf8")))) {
       manifest[file] = { source: "generated", generator, url: null, author: null, license: "Apache-2.0", modified: false, notes: manifest[file]?.notes ?? "" };
     }
   }
+  // Generated files that went away leave the manifest too.
+  for (const f of Object.keys(manifest)) if (manifest[f].source === "generated" && !existsSync(join(modDir, f))) delete manifest[f];
   manifest = Object.fromEntries(Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b)));
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
 }

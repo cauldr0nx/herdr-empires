@@ -379,6 +379,8 @@ const DIALOG_W = { prompt: 360, confirm: 360, about: 420, options: 460, techtree
 export function openDialog(kind, p = {}) {
   const k = scale();
   if (kind === "screen") {
+    // Age-up: a full-width banner over the resource bar, not modal (SPEC §7.3).
+    if (p.mode === "ageup") return openOverlay({ mod: "empires", kind: "window", frame: "none", at: { x: 0, y: 0 }, width: 1, height: (52 * k) / zoom(), props: { role: "dialog", kind, ...p } });
     return openOverlay({ mod: "empires", kind: "dialog", frame: "none", modal: true, width: 1, height: 1, props: { role: "dialog", kind, ...p } });
   }
   const w = p.width ?? DIALOG_W[kind] ?? 380;

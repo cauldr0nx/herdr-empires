@@ -1,0 +1,13 @@
+{
+  "sounds/horn.mp3": "art/sounds.ts",
+  "sounds/bell.mp3": "art/sounds.ts",
+  "sounds/done.mp3": "art/sounds.ts",
+  "sounds/ageup.mp3": "art/sounds.ts",
+  "sounds/click.mp3": "art/sounds.ts",
+  "sounds/knock.mp3": "art/sounds.ts",
+  "sounds/error.mp3": "art/sounds.ts",
+  "sounds/select.mp3": "art/sounds.ts",
+  "sounds/train.mp3": "art/sounds.ts",
+  "sounds/victory.mp3": "art/sounds.ts",
+  "sounds/resign.mp3": "art/sounds.ts"
+}

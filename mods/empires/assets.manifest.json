@@ -609,6 +609,15 @@
     "modified": false,
     "notes": ""
   },
+  "img/herald.svg": {
+    "source": "generated",
+    "generator": "art/textures.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
   "img/house.svg": {
     "source": "generated",
     "generator": "art/generate.ts",
@@ -645,6 +654,15 @@
     "modified": false,
     "notes": ""
   },
+  "img/parchment.svg": {
+    "source": "generated",
+    "generator": "art/textures.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
   "img/population.svg": {
     "source": "generated",
     "generator": "art/generate.ts",
@@ -654,9 +672,27 @@
     "modified": false,
     "notes": ""
   },
+  "img/resign.svg": {
+    "source": "generated",
+    "generator": "art/textures.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
   "img/seal.svg": {
     "source": "generated",
     "generator": "art/generate.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "img/stone-wall.svg": {
+    "source": "generated",
+    "generator": "art/textures.ts",
     "url": null,
     "author": null,
     "license": "Apache-2.0",
@@ -690,9 +726,117 @@
     "modified": false,
     "notes": ""
   },
+  "img/victory.svg": {
+    "source": "generated",
+    "generator": "art/textures.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
   "img/wood.svg": {
     "source": "generated",
-    "generator": "art/generate.ts",
+    "generator": "art/textures.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "sounds/ageup.mp3": {
+    "source": "generated",
+    "generator": "art/sounds.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "sounds/bell.mp3": {
+    "source": "generated",
+    "generator": "art/sounds.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "sounds/click.mp3": {
+    "source": "generated",
+    "generator": "art/sounds.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "sounds/done.mp3": {
+    "source": "generated",
+    "generator": "art/sounds.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "sounds/error.mp3": {
+    "source": "generated",
+    "generator": "art/sounds.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "sounds/horn.mp3": {
+    "source": "generated",
+    "generator": "art/sounds.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "sounds/knock.mp3": {
+    "source": "generated",
+    "generator": "art/sounds.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "sounds/resign.mp3": {
+    "source": "generated",
+    "generator": "art/sounds.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "sounds/select.mp3": {
+    "source": "generated",
+    "generator": "art/sounds.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "sounds/train.mp3": {
+    "source": "generated",
+    "generator": "art/sounds.ts",
+    "url": null,
+    "author": null,
+    "license": "Apache-2.0",
+    "modified": false,
+    "notes": ""
+  },
+  "sounds/victory.mp3": {
+    "source": "generated",
+    "generator": "art/sounds.ts",
     "url": null,
     "author": null,
     "license": "Apache-2.0",

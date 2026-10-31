@@ -160,8 +160,11 @@ export default class Resources {
         const age = ageFor(completed, shared("empires.ages")).index;
         setShared("empires.session", { ...session, completed, age });
         if (age > (Number(session.age) || 0) && !calm()) {
-          sfx("ageup");
-          openDialog("screen", { mode: "ageup", age });
+          if (age >= 3) openDialog("screen", { mode: "victory", age, completed });
+          else {
+            sfx("ageup");
+            openDialog("screen", { mode: "ageup", age });
+          }
         }
       }
       if (shared("empires.alerts") === true) {

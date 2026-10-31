@@ -98,23 +98,24 @@ export default class Dialog {
 
   renderScreen(u) {
     const mode = this.p.mode;
-    const w = appWindow();
-    if (mode === "ageup" || mode === "victory") {
-      const age = AGES[Math.min(AGES.length - 1, Number(this.p.age) || 0)];
-      return div()
-        .size_full()
-        .flex()
-        .flex_col()
-        .items_center()
-        .justify_start()
-        .child(
-          plank(u, h_flex().w_full().h(u(48)).items_center().justify_center().gap(u(14)).child(image(`${ASSETS}/img/ornament.svg`).w(u(22)).h(u(22))).child(heading(u, mode === "victory" ? `Victory: the ${age}` : `You have advanced to the ${age}`, { size: 18 })).child(image(`${ASSETS}/img/ornament.svg`).w(u(22)).h(u(22))), { full: false })
-            .w_full()
-            .border_b(u(2))
-            .border_color(C.gold),
-        );
+    const age = AGES[Math.min(AGES.length - 1, Number(this.p.age) || 0)];
+    if (mode === "ageup") {
+      return own(
+        div()
+          .id("ageup")
+          .size_full()
+          .flex()
+          .flex_col()
+          .on_click(() => this.close())
+          .child(
+            plank(u, h_flex().size_full().items_center().justify_center().gap(u(14)).child(image(`${ASSETS}/img/ornament.svg`).w(u(22)).h(u(22))).child(heading(u, `You have advanced to the ${age}`, { size: 18 })).child(image(`${ASSETS}/img/ornament.svg`).w(u(22)).h(u(22))), { full: true }),
+          )
+          .border_b(u(2))
+          .border_color(C.gold),
+      );
     }
-    const title = mode === "resign" ? "The realm rests. Returning to Herdr…" : "Herdr Empires";
+    const picture = mode === "victory" ? "victory" : mode === "resign" ? "resign" : "loading";
+    const title = mode === "victory" ? `Victory: the ${age}` : mode === "resign" ? "The realm rests. Returning to Herdr…" : "Herdr Empires";
     const tip = TIPS[(Number(shared("empires.bootAt")) || 0) % TIPS.length];
     return div()
       .id("screen")
@@ -122,7 +123,7 @@ export default class Dialog {
       .relative()
       .bg(C.stone.dark)
       .on_click(() => this.close())
-      .child(image(`${ASSETS}/img/loading.svg`).absolute().top(0).left(0).size_full())
+      .child(image(`${ASSETS}/img/${picture}.svg`).absolute().top(0).left(0).size_full())
       .child(
         v_flex()
           .absolute()
@@ -132,6 +133,7 @@ export default class Dialog {
           .items_center()
           .gap(u(10))
           .child(heading(u, title, { size: 22 }))
+          .when(mode === "victory", (el) => el.child(div().text_size(u(13)).text_color(C.text).child(`${Number(this.p.completed) || 0} tasks completed this session. The chronicle remembers.`)))
           .when(mode === "loading", (el) =>
             el
               .child(div().text_size(u(13)).text_color(C.text).child(`Tip: ${tip}`))
