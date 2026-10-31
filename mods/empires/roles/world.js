@@ -12,8 +12,8 @@
 // a second, and only while the world is shown, the window is active and something moves.
 
 import { div, image } from "gpui-kit";
-import { spaces, agents, terminals, shared, setShared, run, readTextFile, appHome, window as appWindow } from "herdr";
-import { C, FONT_SC, DISPLAY, ASSETS, unit, root, own, calm, glyph } from "../kit.js";
+import { spaces, agents, terminals, shared, setShared, run, readTextFile, appHome, knownAgents, window as appWindow } from "herdr";
+import { C, FONT_SC, DISPLAY, ASSETS, unit, root, own, calm, glyph, openMenu, openDialog } from "../kit.js";
 import { worldModel, tripState, dirRow, animFallback, entityFallback, hashStr, seeded } from "../data.js";
 import { setView, viewMode } from "./views.js";
 import { openUnitChat } from "./chat.js";
@@ -171,6 +171,27 @@ export default class World {
     return { el, y: working ? un.home.y : at.y };
   }
 
+  /** Right-click on a town center or building: start a new agent (or a shell) in that space. */
+  trainMenu(town, at, cx) {
+    const space = spaces().find((s) => s.id === town.space);
+    cx.spawn(async () => {
+      let known = [];
+      try {
+        known = (await knownAgents({ on: space?.machine ?? null })).filter((a) => a.installed && Array.isArray(a.run) && a.run.length);
+      } catch {}
+      const items = [
+        ...known.slice(0, 10).map((a) => ({ label: `Train ${a.name}`, icon: "train", act: { run: ["tab.new", { space: town.space, argv: a.run }] } })),
+        ...(known.length ? [] : [{ label: "No agents found on this machine", disabled: true }]),
+        { sep: true },
+        { label: "Train with &orders...", icon: "train", act: { dialog: { kind: "train", title: "Train a unit", space: town.space } } },
+        { label: "New &worker (shell tab)", icon: "build", act: { run: ["tab.new", { space: town.space }] } },
+        { sep: true },
+        { label: `Show ${town.name}`, icon: "town", act: { run: ["space.select", { id: town.space }] } },
+      ];
+      openMenu(items, at);
+    });
+  }
+
   /** A press that ended a drag a moment ago is not a click. */
   wasDrag() {
     return Date.now() - this.dragEnd < 250;
@@ -285,7 +306,7 @@ export default class World {
         const tc = ents[tcName];
         items.push({
           y: town.y,
-          el: div().id(`tc-${town.space}`).cursor_pointer().tooltip(`${town.name}: town center. Click to show this space`).on_click(() => { if (!this.wasDrag()) run("space.select", { id: town.space }); }).child(this.sprite(tc, tc.image, town.slot, town.x, town.y, S, view)),
+          el: div().id(`tc-${town.space}`).cursor_pointer().tooltip(`${town.name}: town center. Click to show this space; right-click to train a unit here`).on_click(() => { if (!this.wasDrag()) run("space.select", { id: town.space }); }).on_mouse_down("right", (e, cx) => { cx.stop_propagation(); this.trainMenu(town, e.position, cx); }).child(this.sprite(tc, tc.image, town.slot, town.x, town.y, S, view)),
         });
       }
       town.buildings.forEach((b) => {
@@ -295,7 +316,7 @@ export default class World {
         const rel = ent.variants ? ent.variants[hashStr(b.tab) % ent.variants.length] : ent.image;
         items.push({
           y: b.y,
-          el: div().id(`bld-${b.tab}`).cursor_pointer().tooltip(`${b.name ? `Tab ${b.name}` : "Tab"}${b.settled ? " (garrisoned)" : ""}: click to show it`).on_click(() => { if (!this.wasDrag()) run("tab.select", { id: b.tab }); }).child(this.sprite(ent, rel, town.slot, b.x, b.y, S, view, { opacity: b.settled ? 0.8 : null })),
+          el: div().id(`bld-${b.tab}`).cursor_pointer().tooltip(`${b.name ? `Tab ${b.name}` : "Tab"}${b.settled ? " (garrisoned)" : ""}: click to show it; right-click to train a unit in ${town.name}`).on_click(() => { if (!this.wasDrag()) run("tab.select", { id: b.tab }); }).on_mouse_down("right", (e, cx) => { cx.stop_propagation(); this.trainMenu(town, e.position, cx); }).child(this.sprite(ent, rel, town.slot, b.x, b.y, S, view, { opacity: b.settled ? 0.8 : null })),
         });
       });
       // Town banner under the town center: name, and "+N" when units overflow the cap.

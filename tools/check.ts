@@ -352,6 +352,9 @@ await renderRole("selection (demo, command layer, focused only)", roles.get("sel
 // The unit chat bar: opened inside a layout overlay (no props role in the spec), so render it here.
 await renderRole("chatbar (demo)", { role: "chatbar", terminal: "t1", name: "Unit", overlay: "o1" }, demo, null);
 await renderRole("chatbar (empty)", { role: "chatbar", terminal: "t1", overlay: "o1" }, empty, null);
+await renderRole("chatbar (pinned, full)", { role: "chatbar", terminal: "t1", name: "Unit", overlay: "o1", w: 700, h: 420, pinned: true, full: true }, demo, null);
+await renderRole("chatgrip (demo)", { role: "chatgrip", terminal: "t1", name: "Unit", overlay: "o1", w: 620, h: 400 }, demo, null);
+await renderRole("resizer (demo)", { role: "resizer", terminal: "t1", name: "Unit", overlay: "o2", state: { w: 620, h: 400, pinned: false }, origin: { x: 100, y: 80 }, grab: { x: 4, y: 4 }, start: { x: 716, y: 476 } }, demo, null);
 delete herdr.log.shared["empires.command"];
 
 rmSync(work, { recursive: true, force: true });

@@ -51,11 +51,14 @@ overwrite any file of the same name that it did not install.
   and gather there; blocked agents wait at the town center under a red alert;
   finished ones wear a check until you look; idle ones stand about.
 - **Talk to a unit**: click it and a small chat window opens with its live
-  terminal; type to answer it, click anywhere outside (or ×) to close.
-  **Pin** keeps it open as a window you drag by its title bar; **Full** fills
-  the Herdr window (again to restore); **− / +** step its size; **Pane** jumps
-  to the unit's own pane in Terminals view. `alt-c` does the same for the focused unit (or the first
-  one that needs you). Click a town center for its space, a building for its tab.
+  terminal; type to answer it. Drag it by its title bar; drag the gold mark in
+  its bottom-right corner to resize it. A click outside closes it unless it is
+  **Pinned**; **Full** fills the Herdr window (**Restore** goes back); **Pane**
+  jumps to the unit's own pane in Terminals view; × closes. `alt-c` opens a chat
+  for the focused unit (or the first that needs you), `alt-shift-c` pinned.
+- **Train units**: right-click a town center or any building for a menu of your
+  installed agents; pick one to start it in that space (or train with orders, or
+  open a shell). Click a town center for its space, a building for its tab.
 - **Move around**: drag the map; the scroll wheel zooms; **Centre** returns to
   the current space's town.
 - **Options → World**: view, art pack, world zoom, and **Animate units** (off:
