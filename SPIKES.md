@@ -44,3 +44,21 @@ read from code, not observed on screen; re-verify in the app before release.
   `.spin(ms >= 100)` are the only native motion; `.transition` for changes.
 - Key actions `empires.<command>` reach shown copies' `nextCommand()`; the
   `resources` role is always shown, so it dispatches them (Herdr 98 pattern).
+
+## Decisions deferred to M2/M5 in the spec
+
+- **§6.9 terminal right-click menu:** kept Herdr's shipped `menu` mod. Its
+  pane menu carries items a replacement would have to reproduce exactly
+  (split, zoom, send right-clicks to the program, send a kept sub-agent back,
+  close) and its `target` semantics; the parchment look is not worth the
+  drift risk. The layout therefore sets no `terminal_menu`.
+- **§6.10 toasts:** Herdr's `toast` mod stays; it reads `theme()` colours, so
+  on the empires palette it is parchment-on-wood already. There is no
+  layout-scoped toast mod in the API (toasts are opened by the app with
+  `kind: "toast"`).
+- **§6.5 minimap above 12 towns:** a wrapping row of 12×16 px banners in
+  player colours (`minimapMode()` in `data.js`), with the same clicks.
+- **§5.1 narrow (< 900 px):** `fitLayout(narrow)` turns `hud` into a column
+  (selection 78 px over a row of command card + minimap; 232 px total) and
+  the resource bar drops its labels and shortens the age banner; the width
+  comes from the resource bar's `on_size_change` (the window's full width).

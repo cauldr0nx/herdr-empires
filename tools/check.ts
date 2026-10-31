@@ -232,6 +232,7 @@ const cxFor = (label: string) => {
 };
 
 let rendered = 0;
+let sizeOverride: { width: number; height: number } | null = null;
 const overlayQueue: { props: any; label: string }[] = [];
 const seenOverlay = new Set<string>();
 
@@ -255,7 +256,7 @@ async function renderRole(label: string, props: any, world: any, float: string |
       const ev: any = { click_count: 1, modifiers: { control: false, alt: false, shift: false, platform: false, function: false }, button: "left", position: { x: 10, y: 10 }, local_position: { x: 2, y: 2 }, bounds: { x: 0, y: 0, width: 40, height: 20 }, key: "escape", keystroke: "escape", key_char: undefined };
       try {
         if (h.name === "on_hover") h.fn(true, cxFor(label));
-        else if (h.name === "on_size_change") h.fn({ width: 1200, height: 800 }, cxFor(label));
+        else if (h.name === "on_size_change") h.fn(sizeOverride ?? { width: 1200, height: 800 }, cxFor(label));
         else h.fn(ev, cxFor(label));
       } catch (e: any) {
         fail(`${label}: ${h.name} handler threw: ${e?.stack?.split("\n").slice(0, 3).join(" | ") ?? e}`);
@@ -308,12 +309,25 @@ while (overlayQueue.length && guard++ < 200) {
   const o = overlayQueue.shift()!;
   await renderRole(o.label, o.props, demo, null);
 }
-// Extra states: narrow window and 2x scale and calm/hud-off.
+// Extra states (SPEC M5): 2x scale with calm mode, a narrow window (two-row HUD), macOS and Windows chrome.
 herdr.log.shared["empires.scale"] = 2;
 herdr.log.shared["empires.calm"] = true;
-await renderRole("resources (demo, scale 2, calm)", roles.get("resources") ?? { role: "resources" }, demo, null);
+for (const role of ["resources", "banner", "command", "selection", "minimap", "herald"]) {
+  const p = { ...(roles.get(role) ?? { role }) }; const float = p.float ?? null; delete p.float;
+  await renderRole(`${role} (demo, scale 2, calm)`, p, demo, float);
+}
 delete herdr.log.shared["empires.scale"];
 delete herdr.log.shared["empires.calm"];
+sizeOverride = { width: 700, height: 900 };
+await renderRole("resources (demo, narrow 700 px, portrait)", roles.get("resources") ?? { role: "resources" }, demo, null);
+sizeOverride = null;
+for (const platform of ["macos", "windows"] as const) {
+  const w = { ...demo, window: { platform, titlebar: "none", buttons: platform === "windows", maximized: platform === "windows", fullscreen: false, active: true } };
+  await renderRole(`resources (demo, ${platform})`, roles.get("resources") ?? { role: "resources" }, w, null);
+}
+herdr.log.shared["empires.hud"] = "hidden";
+await renderRole("resources (demo, HUD hidden)", roles.get("resources") ?? { role: "resources" }, demo, null);
+delete herdr.log.shared["empires.hud"];
 
 rmSync(work, { recursive: true, force: true });
 
